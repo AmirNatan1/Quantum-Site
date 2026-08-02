@@ -8,6 +8,14 @@ function toRoute(slug: string[]) {
   return `/${slug.join("/")}`;
 }
 
+export function generateStaticParams() {
+  return Object.keys(routeMetadata)
+    .filter((route) => route !== "/")
+    .map((route) => ({ slug: route.slice(1).split("/") }));
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const route = toRoute(slug);
