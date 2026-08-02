@@ -65,22 +65,16 @@ h1, h2, h3 {
   text-wrap: balance;
 }
 .title-i {
-  position: relative;
   display: inline-block;
-  color: inherit;
-}
-.title-i::after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  top: .055em;
-  left: 50%;
-  width: .15em;
-  height: .15em;
-  border-radius: 50%;
-  background: var(--magenta-500);
-  transform: translateX(-50%);
-  pointer-events: none;
+  color: var(--ink-900);
+  background: linear-gradient(
+    to bottom,
+    var(--magenta-500) 0 31%,
+    var(--ink-900) 31% 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 p { text-wrap: pretty; }
 button, a { -webkit-tap-highlight-color: transparent; }

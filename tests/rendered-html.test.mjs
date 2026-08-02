@@ -86,10 +86,11 @@ test("starter assets are removed and production assets exist", async () => {
 });
 
 test("team portraits and requested title accents render correctly", async () => {
-  const [aboutResponse, pocsResponse, sparkResponse] = await Promise.all([
+  const [aboutResponse, pocsResponse, sparkResponse, titleStyles] = await Promise.all([
     render("/about"),
     render("/pocs"),
     render("/spark"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   const [aboutHtml, pocsHtml, sparkHtml] = await Promise.all([
     aboutResponse.text(),
@@ -117,6 +118,8 @@ test("team portraits and requested title accents render correctly", async () => 
 
   assert.match(pocsHtml, /class="title-i"/);
   assert.match(sparkHtml, /class="title-i"/);
+  assert.match(titleStyles, /\.title-i\s*\{[\s\S]*linear-gradient/);
+  assert.doesNotMatch(titleStyles, /\.title-i::after/);
   assert.doesNotMatch(pocsHtml, /<div class="page-orbit" aria-hidden="true"><span/);
   assert.doesNotMatch(sparkHtml, /<div class="page-orbit" aria-hidden="true"><span/);
 });
