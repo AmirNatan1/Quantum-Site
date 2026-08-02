@@ -47,6 +47,9 @@ test("server-renders the finished Quantum-hub home page", async () => {
   assert.match(html, /<title>Quantum-hub — Corporate innovation, proven in the field<\/title>/i);
   assert.match(html, /Operational needs\./);
   assert.match(html, /Proven technology\./);
+  assert.match(html, /class="title-word"/);
+  assert.match(html, /\/media\/poc-playground\.mp4/);
+  assert.match(html, /<video[^>]*autoplay[^>]*muted[^>]*loop/i);
   assert.match(html, /110/);
   assert.match(html, /29/);
   assert.match(html, /og\.png/);
@@ -82,6 +85,8 @@ test("starter assets are removed and production assets exist", async () => {
     access(new URL("../public/favicon.png", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../public/team/shay-livnat.jpg", import.meta.url)),
+    access(new URL("../public/media/poc-playground.mp4", import.meta.url)),
+    access(new URL("../public/media/poc-playground-original.png", import.meta.url)),
   ]);
 });
 
@@ -119,6 +124,9 @@ test("team portraits and requested title accents render correctly", async () => 
   assert.match(pocsHtml, /class="title-i"/);
   assert.match(sparkHtml, /class="title-i"/);
   assert.match(titleStyles, /\.title-i\s*\{[\s\S]*linear-gradient/);
+  assert.match(titleStyles, /\.title-word\s*\{\s*display:\s*inline-block/);
+  assert.match(titleStyles, /currentColor 31% 100%/);
+  assert.match(titleStyles, /\.home-video-bg\s*\{[\s\S]*var\(--ink-950\)/);
   assert.doesNotMatch(titleStyles, /\.title-i::after/);
   assert.doesNotMatch(pocsHtml, /<div class="page-orbit" aria-hidden="true"><span/);
   assert.doesNotMatch(sparkHtml, /<div class="page-orbit" aria-hidden="true"><span/);

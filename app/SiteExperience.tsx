@@ -28,8 +28,14 @@ function Arrow() {
 function TitleText({ text }: { text: string }) {
   return (
     <>
-      {text.split(/(i)/g).map((part, index) =>
-        part === "i" ? <span className="title-i" key={`${part}-${index}`}>{part}</span> : part,
+      {text.split(/(\s+)/g).map((word, wordIndex) =>
+        /^\s+$/.test(word) ? word : (
+          <span className="title-word" key={`${word}-${wordIndex}`}>
+            {word.split(/(i)/g).map((part, partIndex) =>
+              part === "i" ? <span className="title-i" key={`${part}-${partIndex}`}>{part}</span> : part,
+            )}
+          </span>
+        ),
       )}
     </>
   );
@@ -532,7 +538,13 @@ function ClosingCTA({ title = "Have an operational challenge worth testing?", hr
 function HomePage() {
   return (
     <>
-      <section className="home-hero">
+      <section className="home-hero home-video-hero">
+        <div className="home-video-bg" aria-hidden="true">
+          <video autoPlay muted loop playsInline preload="metadata" poster="/media/poc-playground-original.png">
+            <source src="/media/poc-playground.mp4" type="video/mp4" />
+          </video>
+          <div className="home-video-shade" />
+        </div>
         <div className="shell hero-grid">
           <div className="hero-copy" data-reveal>
             <Eyebrow>corporate innovation consortium</Eyebrow>
@@ -540,10 +552,9 @@ function HomePage() {
             <p>The shared innovation arm of Bazan, Hyundai, VDL and Taavura-Livnat. We turn operational needs into technology searches, then prove the fit in the field.</p>
             <div className="hero-actions">
               <Action href="/for-partners">Bring a challenge</Action>
-              <Action href="/spark-register" secondary>Apply to SPARK</Action>
+              <Action href="/spark-register" secondary inverse>Apply to SPARK</Action>
             </div>
           </div>
-          <div className="hero-visual" data-reveal><SignalField /></div>
         </div>
         <div className="hero-note shell"><span>Scroll to follow the signal</span><i /></div>
       </section>
