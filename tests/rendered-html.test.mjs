@@ -84,3 +84,39 @@ test("starter assets are removed and production assets exist", async () => {
     access(new URL("../public/team/shay-livnat.jpg", import.meta.url)),
   ]);
 });
+
+test("team portraits and requested title accents render correctly", async () => {
+  const [aboutResponse, pocsResponse, sparkResponse] = await Promise.all([
+    render("/about"),
+    render("/pocs"),
+    render("/spark"),
+  ]);
+  const [aboutHtml, pocsHtml, sparkHtml] = await Promise.all([
+    aboutResponse.text(),
+    pocsResponse.text(),
+    sparkResponse.text(),
+  ]);
+
+  const portraits = [
+    "shay-livnat",
+    "liav-ben-rubi",
+    "dana-taigman-koren",
+    "dalia-damary",
+    "neta-fuchs",
+    "din-shalit",
+    "yuval-asayag",
+    "evyatar-ben-ishay",
+    "oz-dekel",
+    "yael-silberbusch",
+  ];
+
+  for (const portrait of portraits) {
+    assert.match(aboutHtml, new RegExp(`/team/${portrait}\\.jpg`), portrait);
+    await access(new URL(`../public/team/${portrait}.jpg`, import.meta.url));
+  }
+
+  assert.match(pocsHtml, /class="title-i"/);
+  assert.match(sparkHtml, /class="title-i"/);
+  assert.doesNotMatch(pocsHtml, /<div class="page-orbit" aria-hidden="true"><span/);
+  assert.doesNotMatch(sparkHtml, /<div class="page-orbit" aria-hidden="true"><span/);
+});

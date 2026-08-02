@@ -25,6 +25,16 @@ function Arrow() {
   return <span className="arrow-line" aria-hidden="true" />;
 }
 
+function TitleText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(i)/g).map((part, index) =>
+        part === "i" ? <span className="title-i" key={`${part}-${index}`}>{part}</span> : part,
+      )}
+    </>
+  );
+}
+
 function Eyebrow({ children, inverse = false }: { children: ReactNode; inverse?: boolean }) {
   return (
     <div className={`eyebrow${inverse ? " eyebrow-inverse" : ""}`}>
@@ -72,7 +82,7 @@ function SectionHeading({
   return (
     <div className={`section-heading section-heading-${align}${inverse ? " inverse" : ""}`} data-reveal>
       <Eyebrow inverse={inverse}>{eyebrow}</Eyebrow>
-      <h2>{title}</h2>
+      <h2><TitleText text={title} /></h2>
       {body ? <p>{body}</p> : null}
     </div>
   );
@@ -268,13 +278,25 @@ function SiteFooter() {
   );
 }
 
-function PageHero({ eyebrow, title, body, actions }: { eyebrow: string; title: string; body: string; actions?: ReactNode }) {
+function PageHero({
+  eyebrow,
+  title,
+  body,
+  actions,
+  orbitDot = true,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  actions?: ReactNode;
+  orbitDot?: boolean;
+}) {
   return (
     <section className="page-hero">
-      <div className="page-orbit" aria-hidden="true"><span /></div>
+      <div className="page-orbit" aria-hidden="true">{orbitDot ? <span /> : null}</div>
       <div className="shell page-hero-inner" data-reveal>
         <Eyebrow>{eyebrow}</Eyebrow>
-        <h1>{title}</h1>
+        <h1><TitleText text={title} /></h1>
         <p>{body}</p>
         {actions ? <div className="hero-actions">{actions}</div> : null}
       </div>
@@ -349,7 +371,7 @@ function StorySection() {
               onMouseEnter={() => setActive(index)}
             >
               <span>{step.number}</span>
-              <div><h3>{step.title}</h3><p>{step.body}</p></div>
+              <div><h3><TitleText text={step.title} /></h3><p>{step.body}</p></div>
               <button type="button" onClick={() => setActive(index)} aria-label={`Show ${step.title}`}><span /></button>
             </article>
           ))}
@@ -369,7 +391,7 @@ function SectorSection({ full = false }: { full?: boolean }) {
           {sectors.map((sector, index) => (
             <article id={sector.key} className="sector-row" key={sector.key} data-reveal>
               <span>{sector.number}</span>
-              <div><Eyebrow>operating sector</Eyebrow><h2>{sector.title}</h2></div>
+              <div><Eyebrow>operating sector</Eyebrow><h2><TitleText text={sector.title} /></h2></div>
               <div><p>{index === 0 ? "Mobility, sensing and safety technologies tested against partner use cases, including work run with Hyundai and with VDL." : index === 1 ? "Warehousing, sensing, routing and fleet operations across haulage, logistics centers and cargo terminals." : index === 2 ? "Automation, sensing and data for plants where unplanned downtime is the dominant cost." : "Efficiency, resilience, process technology and lower-impact energy systems, including hydrogen."}</p><p>{sector.detail}</p></div>
             </article>
           ))}
@@ -401,7 +423,7 @@ function SectorSection({ full = false }: { full?: boolean }) {
             <div className="sector-radar" aria-hidden="true"><span /><span /><span /><b /></div>
             <div className="sector-display-copy">
               <span>ACTIVE FIELD / {selected.number}</span>
-              <h3>{selected.title}</h3>
+              <h3><TitleText text={selected.title} /></h3>
               <p>{selected.summary}</p>
               <Link href={`/industries#${selected.key}`}>See the technology areas <Arrow /></Link>
             </div>
@@ -421,7 +443,7 @@ function OutcomeGrid({ limit }: { limit?: number }) {
           <>
             <div className="outcome-top"><span>{outcome.sector}</span><span>0{index + 1}</span></div>
             <div className="outcome-signal"><i /><span>{outcome.signal}</span></div>
-            <h3>{outcome.company}</h3>
+            <h3><TitleText text={outcome.company} /></h3>
             <p>{outcome.summary}</p>
             {outcome.href ? <div className="outcome-link">Read the field note <Arrow /></div> : null}
           </>
@@ -483,7 +505,7 @@ function SparkBand() {
       <div className="shell spark-layout">
         <div data-reveal>
           <Eyebrow inverse>spark — poc runway program</Eyebrow>
-          <h2>Equity-free. Industry-backed. Built to commercialize.</h2>
+          <h2><TitleText text="Equity-free. Industry-backed. Built to commercialize." /></h2>
         </div>
         <div data-reveal>
           <p>SPARK connects MVP+ startups with the partner companies and runs a real POC around a use case a partner selects — with no equity taken and no participation fee.</p>
@@ -500,7 +522,7 @@ function ClosingCTA({ title = "Have an operational challenge worth testing?", hr
     <section className="closing-cta">
       <div className="shell closing-inner" data-reveal>
         <Eyebrow>start with the unknown</Eyebrow>
-        <h2>{title}</h2>
+        <h2><TitleText text={title} /></h2>
         <Action href={href}>{label}</Action>
       </div>
     </section>
@@ -514,7 +536,7 @@ function HomePage() {
         <div className="shell hero-grid">
           <div className="hero-copy" data-reveal>
             <Eyebrow>corporate innovation consortium</Eyebrow>
-            <h1><span>Operational needs.</span><span>Proven technology.</span></h1>
+            <h1><span><TitleText text="Operational needs." /></span><span><TitleText text="Proven technology." /></span></h1>
             <p>The shared innovation arm of Bazan, Hyundai, VDL and Taavura-Livnat. We turn operational needs into technology searches, then prove the fit in the field.</p>
             <div className="hero-actions">
               <Action href="/for-partners">Bring a challenge</Action>
@@ -561,7 +583,7 @@ function TeamGrid() {
             {member.image ? <img src={member.image} alt={`${member.name}, ${member.title}`} /> : <span>{member.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}</span>}
             <i>in</i>
           </div>
-          <h3>{member.name}</h3>
+          <h3><TitleText text={member.name} /></h3>
           <p>{member.title}</p>
         </a>
       ))}
@@ -581,7 +603,7 @@ function CardGrid({ cards, columns = 3 }: { cards: string[][]; columns?: number 
     <div className={`plain-grid plain-grid-${columns}`}>
       {cards.map(([title, body], index) => (
         <article className="plain-card" key={title} data-reveal>
-          <span>0{index + 1}</span><h3>{title}</h3><p>{body}</p>
+          <span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p>
         </article>
       ))}
     </div>
@@ -629,7 +651,7 @@ function StartupsPage() {
     <>
       <PageHero eyebrow="for startups" title="A route to real industrial use cases" body="Not a demo day. A scoped POC against a live operational need inside one of four industrial groups, with the people who would own the rollout in the room from the start." actions={<Action href="/spark-register">Apply to SPARK</Action>} />
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="what working with us gets you" title="What you actually get" /><CardGrid cards={benefitCards} columns={4} /></div></section>
-      <section className="track-section section-pad"><div className="shell"><SectionHeading eyebrow="choose the fit" title="Two ways to work with us" /><div className="track-grid"><article data-reveal><span>01 / PROGRAM</span><h3>SPARK — the program</h3><p>A cohort program for MVP+ startups. Partners select the use case and the companies that proceed. Equity-free, no participation fee.</p><Action href="/spark" secondary>Explore SPARK</Action></article><article data-reveal><span>02 / ONGOING</span><h3>The Agile track — ongoing</h3><p>For needs that surface outside a cohort cycle. If your product matches one, we scout you directly.</p><Action href="/contact" secondary>Introduce your product</Action></article></div></div></section>
+      <section className="track-section section-pad"><div className="shell"><SectionHeading eyebrow="choose the fit" title="Two ways to work with us" /><div className="track-grid"><article data-reveal><span>01 / PROGRAM</span><h3><TitleText text="SPARK — the program" /></h3><p>A cohort program for MVP+ startups. Partners select the use case and the companies that proceed. Equity-free, no participation fee.</p><Action href="/spark" secondary>Explore SPARK</Action></article><article data-reveal><span>02 / ONGOING</span><h3><TitleText text="The Agile track — ongoing" /></h3><p>For needs that surface outside a cohort cycle. If your product matches one, we scout you directly.</p><Action href="/contact" secondary>Introduce your product</Action></article></div></div></section>
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="field evidence" title="See what came of it" /><OutcomeGrid limit={4} /><div className="section-action"><Action href="/case-studies" secondary>Explore all case studies</Action></div></div></section>
       <ClosingCTA title="Ready to test against the real environment?" href="/spark-register" label="Apply to SPARK" />
     </>
@@ -661,10 +683,10 @@ function SparkPage() {
   ];
   return (
     <>
-      <PageHero eyebrow="spark — poc runway program" title="From application to industrial POC" body="SPARK connects MVP+ startups with four industrial groups and runs a real POC around a use case one of them selects. No equity is taken and there is no participation fee." actions={<Action href="/spark-register">Register</Action>} />
+      <PageHero eyebrow="spark — poc runway program" title="From application to industrial POC" body="SPARK connects MVP+ startups with four industrial groups and runs a real POC around a use case one of them selects. No equity is taken and there is no participation fee." actions={<Action href="/spark-register">Register</Action>} orbitDot={false} />
       {/* TBC: confirm SPARK cohort count */}
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="the operating conditions" title="Four conditions. One credible POC." body="SPARK works because four things are true at once. Remove any of them and a POC becomes a demonstration instead of a decision." /><CardGrid cards={conditions} columns={4} /></div></section>
-      <section className="spark-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="program route" title="Five steps in" /><div className="vertical-steps">{steps.map(([title, body], index) => <article key={title} data-reveal><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}</div></div></section>
+      <section className="spark-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="program route" title="Five steps in" /><div className="vertical-steps">{steps.map(([title, body], index) => <article key={title} data-reveal><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></article>)}</div></div></section>
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="selected startup support" title="The team and sites around the test" /><CardGrid cards={[["A dedicated project team", "Assigned to your POC."], ["Beta-testing sites", "Access to live partner environments."], ["Cross-industry experts", "People who have run trials in these settings."], ["Alumni network", "Access continues after the cohort ends."]]} columns={4} /></div></section>
       <section className="faq-section section-pad"><div className="shell faq-layout"><SectionHeading eyebrow="frequently asked" title="Before you apply" /><div>{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<i /></summary><p>{answer}</p></details>)}</div></div></section>
       <ClosingCTA title="Think you're SPARK material?" href="/spark-register" label="Register" />
@@ -691,7 +713,7 @@ function PocsPage() {
   ];
   return (
     <>
-      <PageHero eyebrow="proofs of concept" title="Make uncertainty smaller before rollout gets bigger." body="A proof of concept is a way of buying information. Run properly, it costs one scoped test. Run badly, it costs a rollout decision made on a guess." />
+      <PageHero eyebrow="proofs of concept" title="Make uncertainty smaller before rollout gets bigger." body="A proof of concept is a way of buying information. Run properly, it costs one scoped test. Run badly, it costs a rollout decision made on a guess." orbitDot={false} />
       <section id="evidence-engine" className="section-pad"><div className="shell"><SectionHeading eyebrow="the evidence engine" title="A disciplined trial answers one unknown at a time." /><CardGrid cards={evidence} columns={4} /></div></section>
       <section className="playground-section section-pad subtle-section"><div className="shell playground-layout"><div><SectionHeading eyebrow="the playground" title="A workshop, not a showroom" body="We design, plan and execute POCs in-house. That includes a dedicated testing vehicle — a Kia EV6 built out as an integrated hardware and software platform — and access to live partner environments for tests that cannot be simulated." />{/* TBC: beta-testing site count; workshop location */}<Action href="/case-studies" secondary>See the field evidence</Action></div><PlaygroundPanel /></div></section>
       <section className="actasys-teaser section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="a poc in action" title="Actasys: sensor cleaning under test" /><div data-reveal><p>ActaJet tested across cameras and lidar, at multiple mounting positions, speeds, driving scenarios, weather and light conditions.</p><Action href="/case-studies/actasys" secondary>Open the field note</Action></div></div></section>
@@ -714,7 +736,7 @@ function ActasysPage() {
   return (
     <>
       <PageHero eyebrow="automotive · sensor cleaning" title="Actasys: keeping sensors clear" body="A field test structured around the conditions that decide whether a sensor-cleaning system can support ADAS and autonomous functions." />
-      <section className="case-detail section-pad"><div className="shell"><article data-reveal><span>01</span><h2>The technology</h2><p>ActaJet is an electronically controlled system of small actuators that generate strong, localized jets of air at the sensor itself. Rather than washing a lens, it keeps the sensor's field of view clear continuously — which is what ADAS and autonomous functions depend on.</p></article><article data-reveal><span>02</span><h2>The test</h2><p>Actasys supplied several systems so cleaning performance could be measured rather than asserted. The POC covered ADAS cameras and lidar, lidar mounted both on the roof and in the grille, parking, urban and highway driving, and conditions including rain, mud and road splatter.</p></article><article data-reveal><span>03</span><h2>Why it was structured this way</h2><p>A sensor cleaning system only matters in the conditions that dirty a sensor. Testing it across mounting positions, speeds and weather was the only way to produce a result a partner could act on.</p></article></div></section>
+      <section className="case-detail section-pad"><div className="shell"><article data-reveal><span>01</span><h2><TitleText text="The technology" /></h2><p>ActaJet is an electronically controlled system of small actuators that generate strong, localized jets of air at the sensor itself. Rather than washing a lens, it keeps the sensor's field of view clear continuously — which is what ADAS and autonomous functions depend on.</p></article><article data-reveal><span>02</span><h2><TitleText text="The test" /></h2><p>Actasys supplied several systems so cleaning performance could be measured rather than asserted. The POC covered ADAS cameras and lidar, lidar mounted both on the roof and in the grille, parking, urban and highway driving, and conditions including rain, mud and road splatter.</p></article><article data-reveal><span>03</span><h2><TitleText text="Why it was structured this way" /></h2><p>A sensor cleaning system only matters in the conditions that dirty a sensor. Testing it across mounting positions, speeds and weather was the only way to produce a result a partner could act on.</p></article></div></section>
       <section className="test-matrix-section"><div className="shell"><div className="test-matrix" data-reveal><div><span>TEST MATRIX / ACTAJET</span><b>FIELD CONFIGURATION</b></div>{[["Sensors", "Camera · Lidar"], ["Mounting", "Roof · Grille"], ["Routes", "Parking · Urban · Highway"], ["Conditions", "Rain · Mud · Road splatter"]].map(([key, value]) => <div key={key}><span>{key}</span><strong>{value}</strong><i /></div>)}</div></div></section>
       <ClosingCTA title="A POC should answer the adoption question." label="Design a test" />
     </>
@@ -732,7 +754,7 @@ function UpdatesPage() {
 }
 
 function FormStatus() {
-  return <div className="form-status" role="status"><span>Preview mode</span><h3>The form is ready for connection.</h3><p>Until the public inbox is confirmed, reach Quantum-hub through LinkedIn.</p><a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Open LinkedIn <Arrow /></a></div>;
+  return <div className="form-status" role="status"><span>Preview mode</span><h3><TitleText text="The form is ready for connection." /></h3><p>Until the public inbox is confirmed, reach Quantum-hub through LinkedIn.</p><a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Open LinkedIn <Arrow /></a></div>;
 }
 
 function ContactPage() {
@@ -741,7 +763,7 @@ function ContactPage() {
   return (
     <>
       <PageHero eyebrow="contact" title="Get in touch" body="If you have an operational challenge worth testing, or a product you think fits one, tell us in a few lines and we'll come back to you." />
-      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>one clear signal</Eyebrow><h2>Start with the unknown.</h2><p>A short description is enough. Tell us what needs to change, or what your product can already do in the field.</p>{/* TBC: public contact email address */}<a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Quantum-hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal>{sent ? <FormStatus /> : <form onSubmit={submit}><label>Work email<input type="email" name="email" autoComplete="email" required placeholder="you@company.com" /></label><label>Message<textarea name="message" required rows={7} placeholder="What are you trying to test?" /></label><button className="form-submit" type="submit">Send message <Arrow /></button></form>}</div></div></section>
+      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>one clear signal</Eyebrow><h2><TitleText text="Start with the unknown." /></h2><p>A short description is enough. Tell us what needs to change, or what your product can already do in the field.</p>{/* TBC: public contact email address */}<a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Quantum-hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal>{sent ? <FormStatus /> : <form onSubmit={submit}><label>Work email<input type="email" name="email" autoComplete="email" required placeholder="you@company.com" /></label><label>Message<textarea name="message" required rows={7} placeholder="What are you trying to test?" /></label><button className="form-submit" type="submit">Send message <Arrow /></button></form>}</div></div></section>
     </>
   );
 }
@@ -752,7 +774,7 @@ function SparkRegisterPage() {
   return (
     <>
       <PageHero eyebrow="spark application" title="Apply to SPARK" body="Applications are reviewed against needs the partner companies have already defined. Tell us what your product does today, and where it has run." />
-      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>field readiness</Eyebrow><h2>Show us what works today.</h2><p>Equity-free. No participation fee.</p><div className="application-rail"><span>01 · Working product</span><span>02 · Real use case</span><span>03 · Field support</span></div></div><div className="form-card" data-reveal>{sent ? <FormStatus /> : <form onSubmit={submit} className="application-form"><label>Full name<input name="name" autoComplete="name" required /></label><label>Work email<input type="email" name="email" autoComplete="email" required /></label><label>Company<input name="company" autoComplete="organization" required /></label><label>Company website<input type="url" name="website" placeholder="https://" required /></label><label className="field-wide">What does the product do today?<textarea name="product" rows={5} required /></label><label className="field-wide">Where has it already run?<textarea name="field" rows={4} required /></label><label className="field-wide checkbox-field"><input type="checkbox" required /><span>I confirm this information is accurate and can be reviewed by Quantum-hub.</span></label><button className="form-submit field-wide" type="submit">Submit application <Arrow /></button></form>}</div></div></section>
+      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>field readiness</Eyebrow><h2><TitleText text="Show us what works today." /></h2><p>Equity-free. No participation fee.</p><div className="application-rail"><span>01 · Working product</span><span>02 · Real use case</span><span>03 · Field support</span></div></div><div className="form-card" data-reveal>{sent ? <FormStatus /> : <form onSubmit={submit} className="application-form"><label>Full name<input name="name" autoComplete="name" required /></label><label>Work email<input type="email" name="email" autoComplete="email" required /></label><label>Company<input name="company" autoComplete="organization" required /></label><label>Company website<input type="url" name="website" placeholder="https://" required /></label><label className="field-wide">What does the product do today?<textarea name="product" rows={5} required /></label><label className="field-wide">Where has it already run?<textarea name="field" rows={4} required /></label><label className="field-wide checkbox-field"><input type="checkbox" required /><span>I confirm this information is accurate and can be reviewed by Quantum-hub.</span></label><button className="form-submit field-wide" type="submit">Submit application <Arrow /></button></form>}</div></div></section>
     </>
   );
 }

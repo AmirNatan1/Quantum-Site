@@ -22,7 +22,7 @@ export const team: TeamMember[] = [
     name: "Dana Taigman Koren",
     title: "CBO",
     linkedin: "https://www.linkedin.com/in/danataigmankoren/",
-    image: "/team/dana-taigman-koren.png",
+    image: "/team/dana-taigman-koren.jpg",
   },
   {
     name: "Dalia Damary",
@@ -34,33 +34,37 @@ export const team: TeamMember[] = [
     name: "Neta Fuchs",
     title: "Automotive & Logistics Domain Manager",
     linkedin: "https://www.linkedin.com/in/neta-fuchs-3702163b0/",
+    image: "/team/neta-fuchs.jpg",
   },
   {
     name: "Din Shalit",
-    title: "Industry 4.0 & Energy Domain Manager",
+    title: "Industry 4.0, Energy & Defense Domain Manager",
     linkedin: "https://www.linkedin.com/in/din-shalit-405267173/",
-    image: "/team/din-shalit.png",
+    image: "/team/din-shalit.jpg",
   },
   {
     name: "Yuval Asayag",
     title: "Operations & Marketing Lead",
     linkedin: "https://www.linkedin.com/in/yuval-asayag/",
+    image: "/team/yuval-asayag.jpg",
   },
   {
     name: "Evyatar Ben-Ishay",
     title: "POC Center Manager",
     linkedin: "https://www.linkedin.com/in/evyatar-ben-ishay-1a8b60138/",
-    image: "/team/evyatar-ben-ishay.png",
+    image: "/team/evyatar-ben-ishay.jpg",
   },
   {
     name: "Oz Dekel",
     title: "Junior Full Stack Developer",
     linkedin: "https://www.linkedin.com/in/oz-dekel-789ab326a/",
+    image: "/team/oz-dekel.jpg",
   },
   {
     name: "Yael Silberbusch",
     title: "Office Manager",
     linkedin: "https://www.linkedin.com/in/yael-silberbusch-44a1723a4/",
+    image: "/team/yael-silberbusch.jpg",
   },
 ];
 
