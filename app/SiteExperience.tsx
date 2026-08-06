@@ -113,7 +113,7 @@ function SiteHeader({ route }: RouteProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="site-header" data-site-header>
+    <header className={`site-header${route === "/" ? " is-over-dark" : ""}${open ? " is-menu-open" : ""}`} data-site-header>
       <div className="header-inner">
         <Link href="/" className="brand-link" aria-label="Quantum Hub home">
           <img src="/quantum-logo.svg" alt="Quantum Hub" width="174" height="44" />
@@ -129,11 +129,11 @@ function SiteHeader({ route }: RouteProps) {
         </button>
         <nav className={`site-nav${open ? " is-open" : ""}`} aria-label="Primary navigation">
           {navItems.map(([label, href]) => (
-            <Link key={href} href={href} className={route === href ? "is-active" : ""} onClick={() => setOpen(false)}>
+            <Link key={href} href={href} className={route === href ? "is-active" : ""} aria-current={route === href ? "page" : undefined} onClick={() => setOpen(false)}>
               {label}
             </Link>
           ))}
-          <Link className="nav-spark" href="/spark">SPARK</Link>
+          <Link className={`nav-spark${route === "/spark" ? " is-active" : ""}`} href="/spark" aria-current={route === "/spark" ? "page" : undefined} onClick={() => setOpen(false)}>SPARK</Link>
         </nav>
       </div>
     </header>
