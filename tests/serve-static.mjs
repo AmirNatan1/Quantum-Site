@@ -38,6 +38,8 @@ const server = createServer((request, response) => {
 
 const shutdown = () => {
   server.close(() => process.exit(0));
+  server.closeAllConnections();
+  setTimeout(() => process.exit(0), 1_000).unref();
 };
 
 process.on("SIGINT", shutdown);

@@ -1,22 +1,33 @@
 import { expect, test } from "@playwright/test";
 
-const routes = ["/", "/about", "/for-partners", "/for-startups", "/spark", "/industries", "/pocs", "/case-studies", "/case-studies/actasys", "/updates", "/contact", "/spark-register"];
+const publicRoutes = ["/", "/about", "/for-partners", "/for-startups", "/spark", "/industries", "/pocs", "/case-studies", "/contact"];
+const statusRoutes = ["/updates", "/spark-register"];
 
-test("all public routes render their primary content", async ({ page }) => {
-  for (const route of routes) {
+test("all retained routes render their primary content", async ({ page }) => {
+  for (const route of [...publicRoutes, ...statusRoutes]) {
     const response = await page.goto(route);
-    expect(response?.ok(), route).toBeTruthy();
+    expect(response?.status(), route).toBe(200);
     await expect(page.locator("main#main-content")).toBeVisible();
     await expect(page.locator("h1")).toHaveCount(1);
   }
 });
 
-test("homepage exposes an intact heading and progressive story", async ({ page }) => {
+test("named case and unknown routes return real 404 responses", async ({ page }) => {
+  for (const route of ["/case-studies/actasys", "/not-a-real-route"]) {
+    const response = await page.goto(route);
+    expect(response?.status(), route).toBe(404);
+  }
+});
+
+test("homepage exposes publication-safe content and the progressive story", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Operational needs. Proven technology." })).toBeVisible();
-  await expect(page.locator("video")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
+  await expect(page.locator("video, img[src*='hero-quantum-hub'], img[src*='og-signal']")).toHaveCount(0);
   await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
-  await expect(page.getByRole("radio", { name: /field-ready technology/i })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /I have a technology/i })).toBeVisible();
+  await expect(page.locator(".need-card")).toHaveCount(9);
+  await expect(page.locator(".need-card").first()).toContainText("Representative");
+  await expect(page.getByRole("heading", { name: /case library is being prepared for publication/i })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
@@ -24,12 +35,8 @@ test("homepage exposes an intact heading and progressive story", async ({ page }
 test("skip link, playground tabs and controls are keyboard operable", async ({ page, browserName }) => {
   await page.goto("/pocs");
   const skipLink = page.getByRole("link", { name: "Skip to main content" });
-  if (browserName === "webkit") {
-    // WebKit follows Safari's platform setting that may omit links from Tab traversal.
-    await skipLink.focus();
-  } else {
-    await page.keyboard.press("Tab");
-  }
+  if (browserName === "webkit") await skipLink.focus();
+  else await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
   const skipFocus = await skipLink.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -65,7 +72,6 @@ test("Phase 1 layouts hold at audited widths", async ({ page }) => {
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
-
     const measurements = await page.evaluate(() => {
       const heading = document.querySelector<HTMLElement>("h1");
       const story = document.querySelector<HTMLElement>(".signal-story-layout");
@@ -78,12 +84,9 @@ test("Phase 1 layouts hold at audited widths", async ({ page }) => {
         storyColumns: getComputedStyle(story).gridTemplateColumns.split(" ").filter(Boolean).length,
       };
     });
-
     expect(measurements.overflow, `${width}px horizontal overflow`).toBeLessThanOrEqual(1);
     expect(measurements.headingLines, `${width}px headline lines`).toBeLessThanOrEqual(width >= 501 ? 3.2 : 4.2);
-    if (width >= 861 && width <= 1100) {
-      expect(measurements.storyColumns, `${width}px intermediate story columns`).toBe(1);
-    }
+    if (width >= 861 && width <= 1100) expect(measurements.storyColumns, `${width}px intermediate story columns`).toBe(1);
   }
 });
 
@@ -101,10 +104,10 @@ test("primary controls meet the 44px target floor", async ({ page }) => {
   expect(undersized).toEqual([]);
 });
 
-test("corrected text pairs retain WCAG AA contrast", async ({ page }) => {
+test("publication-safe text pairs retain WCAG AA contrast", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  const ratios = await page.locator(".partner-strip-label, .metric small, .signal-stage-copy p, .footer-bottom").evaluateAll((elements) => {
+  const ratios = await page.locator(".partner-strip-label, .qualitative-grid p, .signal-stage-copy p, .footer-bottom").evaluateAll((elements) => {
     const parse = (value: string) => {
       const parts = value.match(/[\d.]+/g)?.map(Number) ?? [];
       return { r: parts[0] ?? 0, g: parts[1] ?? 0, b: parts[2] ?? 0, a: parts[3] ?? 1 };
@@ -138,34 +141,41 @@ test("corrected text pairs retain WCAG AA contrast", async ({ page }) => {
       return { selector: element.className, ratio: (light + 0.05) / (dark + 0.05) };
     });
   });
-  for (const result of ratios) {
-    expect(result.ratio, `${result.selector} contrast`).toBeGreaterThanOrEqual(4.5);
-  }
+  for (const result of ratios) expect(result.ratio, `${result.selector} contrast`).toBeGreaterThanOrEqual(4.5);
 });
 
-test("reduced motion keeps motion decorative and optional", async ({ page }) => {
+test("reduced motion keeps decorative motion optional", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator("video")).toHaveCount(0);
-  const animation = await page.locator(".hero-media-signal").evaluate((element) => getComputedStyle(element).animationName);
+  const animation = await page.locator(".hero-safe-visual > span").first().evaluate((element) => getComputedStyle(element).animationName);
   expect(animation).toBe("none");
 });
 
-test("forms state honestly that submission is unavailable", async ({ page }) => {
-  await page.goto("/contact");
-  await expect(page.getByText(/public contact endpoint is awaiting approval/i)).toBeVisible();
-  await page.getByRole("button", { name: "Check submission status" }).click();
-  await expect(page.getByRole("alert")).toContainText(/No information has been sent/i);
+test("forms fail closed and expose no submission controls", async ({ page }) => {
+  for (const route of ["/contact", "/spark-register"]) {
+    await page.goto(route);
+    await expect(page.locator("form, input, textarea")).toHaveCount(0);
+    await expect(page.getByText(/No information can be submitted/i)).toBeVisible();
+  }
+});
+
+test("status routes are noindex and absent from navigation", async ({ page }) => {
+  for (const route of statusRoutes) {
+    await page.goto(route);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex,follow");
+  }
+  await page.goto("/");
+  await expect(page.locator('.site-nav a[href="/updates"], .site-nav a[href="/spark-register"]')).toHaveCount(0);
+  expect((await page.request.get("/sitemap.xml")).status()).toBe(404);
 });
 
 test("affected pages produce no application warnings or errors", async ({ page }) => {
   const messages: { text: string; url: string }[] = [];
   page.on("console", (message) => {
-    if (message.type() === "warning" || message.type() === "error") {
-      messages.push({ text: message.text(), url: message.location().url });
-    }
+    if (message.type() === "warning" || message.type() === "error") messages.push({ text: message.text(), url: message.location().url });
   });
-  for (const route of ["/", "/pocs", "/spark", "/contact"]) {
+  for (const route of ["/", "/pocs", "/spark", "/contact", "/spark-register"]) {
     await page.goto(route);
     await page.waitForLoadState("networkidle");
   }
@@ -181,10 +191,9 @@ test.describe("without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
   test("essential homepage meaning and routes remain available", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Operational needs. Proven technology." })).toBeVisible();
-    await expect(
-      page.locator(".signal-stage").filter({ hasText: "A live constraint defines what must change." }).first(),
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Bring a challenge" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
+    await expect(page.locator(".signal-stage").filter({ hasText: "The partner states the operational problem" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Bring an operational need" }).first()).toBeVisible();
+    await expect(page.locator(".need-card")).toHaveCount(9);
   });
 });

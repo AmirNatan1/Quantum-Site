@@ -11,7 +11,7 @@ export function useAudiencePreference(defaultValue: AudienceCta["id"] = "partner
   useEffect(() => {
     const stored = window.sessionStorage.getItem(STORAGE_KEY);
     let frame = 0;
-    if (stored === "partner" || stored === "startup" || stored === "explorer") {
+    if (stored === "partner" || stored === "startup") {
       frame = window.requestAnimationFrame(() => setAudienceState(stored));
     }
     return () => window.cancelAnimationFrame(frame);

@@ -10,7 +10,7 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/*.test.mjs",
-    "test:e2e": "playwright test",
+    "test:e2e": "node tests/run-playwright.mjs",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

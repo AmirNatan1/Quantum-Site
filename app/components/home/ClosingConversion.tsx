@@ -4,9 +4,10 @@ export function ClosingConversion() {
   return (
     <section className="closing-conversion">
       <div className="shell">
-        <span>One network. Two ways in.</span>
-        <h2>Bring the constraint.<br />Or bring the technology.</h2>
-        <div><Link href="/contact">Start with a challenge</Link><Link href="/spark">Explore SPARK</Link></div>
+        <span>Two ways in</span>
+        <h2>Start with the need,<br />not the technology</h2>
+        <p>If you run an operation with a problem worth testing, or you have built something that needs to prove itself in the field, the conversation starts the same way.</p>
+        <div><Link href="/contact?intent=challenge">Bring an operational need</Link><Link href="/contact?intent=startup">I have technology to test</Link></div>
       </div>
     </section>
   );

@@ -1,3 +1,5 @@
+import { legalDetails, publicContact } from "../data";
+
 export function getConfiguredSiteUrl() {
   const value = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (!value) return null;
@@ -14,9 +16,17 @@ export function OrganizationStructuredData() {
   const data = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Quantum-hub",
-    sameAs: ["https://www.linkedin.com/company/quantum-hub/"],
-    address: { "@type": "PostalAddress", addressLocality: "Herzliya", addressCountry: "IL" },
+    name: "Quantum Hub",
+    legalName: legalDetails.entityName,
+    identifier: legalDetails.companyNumber,
+    sameAs: [publicContact.linkedin],
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Arik Einstein 3, 8th floor",
+      addressLocality: "Herzliya",
+      postalCode: "4659071",
+      addressCountry: "IL",
+    },
     ...(siteUrl
       ? {
           url: siteUrl.href,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import SiteExperience from "../SiteExperience";
 import { routeMetadata } from "../content";
 import { getConfiguredSiteUrl } from "../lib/structured-data";
@@ -20,32 +21,30 @@ export const dynamicParams = false;
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const route = toRoute(slug);
-  const page = routeMetadata[route] || {
-    title: "Quantum-hub",
-    description: "Operational needs. Proven technology.",
-  };
+  const page = routeMetadata[route];
+  if (!page) notFound();
   const siteUrl = getConfiguredSiteUrl();
-  const socialImage = siteUrl ? new URL("/og-signal-v1.png", siteUrl).href : undefined;
   return {
     title: page.title,
     description: page.description,
+    robots: page.indexing,
     alternates: siteUrl ? { canonical: route } : undefined,
     openGraph: {
       title: page.title,
       description: page.description,
       type: "website",
-      images: socialImage ? [{ url: socialImage, width: 1731, height: 909, alt: "Quantum-hub — Operational needs. Proven technology." }] : undefined,
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title: page.title,
       description: page.description,
-      images: socialImage ? [socialImage] : undefined,
     },
   };
 }
 
 export default async function ContentPage({ params }: PageProps) {
   const { slug } = await params;
-  return <SiteExperience route={toRoute(slug)} />;
+  const route = toRoute(slug);
+  if (!routeMetadata[route]) notFound();
+  return <SiteExperience route={route} />;
 }

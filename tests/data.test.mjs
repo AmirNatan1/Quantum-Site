@@ -1,26 +1,57 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { calculateMatchScore, describeMatchScore } from "../app/components/match/match-score.ts";
+import {
+  caseStudies,
+  needs,
+  partners,
+  publicationGates,
+  routeMetadata,
+  sparkStatus,
+  updateRecords,
+} from "../app/data/index.ts";
+import { handleLead } from "../functions/api/_lead.ts";
 
-test("structured content declares identifiers and explicit evidence states", async () => {
-  const [site, needs, cases, spark] = await Promise.all([
-    readFile(new URL("../app/data/site.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/data/needs.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/data/case-studies.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/data/spark.ts", import.meta.url), "utf8"),
-  ]);
-  assert.match(site, /evidenceState:\s*"pending"/);
-  assert.match(needs, /visibility:\s*"representative"/);
-  assert.match(cases, /evidence:\s*\[/);
-  assert.match(cases, /updatedAt:/);
-  assert.match(spark, /state:\s*"tbc"/);
+test("public data exposes only approved or representative-safe records", () => {
+  assert.equal(partners.length, 5);
+  assert.equal(needs.length, 9);
+  assert.ok(needs.every((need) => need.displayLabel === "Representative — not an open call"));
+  assert.ok(needs.every((need) => !Object.hasOwn(need, "cta")));
+  assert.equal(caseStudies.length, 0);
+  assert.equal(updateRecords.length, 0);
 });
 
-test("match score is deterministic and bounded for valid inputs", () => {
-  assert.equal(calculateMatchScore({ readiness: 100, operationalFit: 100, evidenceFit: 100 }), 100);
-  assert.equal(calculateMatchScore({ readiness: 0, operationalFit: 0, evidenceFit: 0 }), 0);
-  assert.match(describeMatchScore(85), /Strong candidate/);
-  assert.match(describeMatchScore(65), /Promising/);
-  assert.match(describeMatchScore(40), /discovery/);
+test("publication gates default to closed", () => {
+  assert.equal(publicationGates.metricsEnabled, false);
+  assert.equal(publicationGates.partnerLogosEnabled, false);
+  assert.equal(publicationGates.partnerFiguresEnabled, false);
+  assert.equal(publicationGates.evidenceEnabled, false);
+  assert.equal(publicationGates.fieldNotesEnabled, false);
+  assert.equal(publicationGates.applicationPrivacyText, null);
+  assert.equal(publicationGates.productionOrigin, null);
+});
+
+test("SPARK remains unconfirmed and date-qualified", () => {
+  assert.equal(sparkStatus.state, "unconfirmed");
+  assert.equal(sparkStatus.applicationHref, null);
+  assert.equal(sparkStatus.cohortCount, 11);
+  assert.equal(sparkStatus.cohortAsOf, "August 2026");
+  assert.match(sparkStatus.duration, /Thirteen weeks/);
+});
+
+test("blocked and hidden routes cannot become indexable", () => {
+  assert.equal(routeMetadata["/case-studies/actasys"], undefined);
+  assert.equal(routeMetadata["/updates"].indexing, "noindex,follow");
+  assert.equal(routeMetadata["/spark-register"].indexing, "noindex,follow");
+});
+
+test("lead endpoints fail closed before accepting a payload", async () => {
+  const response = await handleLead(
+    { request: new Request("https://example.invalid/api/contact", { method: "POST", body: "private" }), env: {} },
+    "contact",
+  );
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    ok: false,
+    formError: "Submission is not open. No information has been received or sent.",
+  });
 });

@@ -10,7 +10,6 @@ export type ApprovedAsset = {
   width: number;
   height: number;
   format: "svg" | "webp" | "avif" | "png" | "mp4" | "webm";
-  approvalRef?: string;
 };
 
 export type EvidenceRef = {
@@ -48,24 +47,11 @@ export type Partner = {
     | "venture"
     | "other";
   mark?: ApprovedAsset;
-  website?: string;
-  href?: string;
-  evidenceRefs: string[];
   displayStatus: "approved-mark" | "typographic-fallback";
 };
 
-export type Metric = {
-  id: string;
-  value: string;
-  label: string;
-  qualifier?: string;
-  source?: EvidenceRef;
-  asOf?: string;
-  evidenceState: "verified" | "pending";
-};
-
 export type AudienceCta = {
-  id: "partner" | "startup" | "explorer";
+  id: "partner" | "startup";
   title: string;
   description: string;
   primary: Cta;
@@ -80,7 +66,6 @@ export type ProcessStage = {
   shortLabel: string;
   description: string;
   state: EvidenceState;
-  evidenceRefs: string[];
   cta?: Cta;
 };
 
@@ -89,13 +74,8 @@ export type Need = {
   title: string;
   summary: string;
   sectorIds: string[];
-  processStageIds: string[];
-  readiness: "discovery" | "open" | "matched" | "pilot" | "closed";
-  visibility: "public" | "representative" | "confidential";
-  ownerLabel?: string;
-  updatedAt?: string;
-  source?: EvidenceRef;
-  cta: Cta;
+  sectorLabel: string;
+  displayLabel: "Representative — not an open call";
 };
 
 export type Outcome = {
@@ -119,35 +99,28 @@ export type CaseStudy = {
   signal: string;
   summary: string;
   href?: string;
-  needId?: string;
   partnerLabel: string;
   startupLabel: string;
   challenge: string;
   approach: string;
   successCriteria: string[];
-  duration?: string;
   status: "completed" | "active" | "paused" | "withheld";
   evidence: EvidenceRef[];
   outcomes: Outcome[];
-  hero?: ApprovedAsset;
-  confidentiality: "public" | "anonymized" | "restricted";
   updatedAt: string;
 };
 
 export type SparkStatus = {
-  state: "open" | "closed" | "upcoming" | "rolling" | "paused" | "tbc";
-  cohortLabel?: string;
-  applicationOpen?: string;
-  deadline?: string;
-  programDates?: string;
+  state: "unconfirmed";
+  duration: string;
+  cohortCount: number;
+  cohortAsOf: string;
   eligibility: string[];
-  benefits: string[];
-  commitments: string[];
-  responseTime?: string;
-  estimatedFormMinutes?: number;
-  applicationHref?: string;
-  lastVerifiedAt?: string;
-  source?: EvidenceRef;
+  notReadyIf: string[];
+  selectionCriteria: string;
+  participationFee: string;
+  equity: string;
+  applicationHref: null;
 };
 
 export type Update = {
@@ -168,8 +141,7 @@ export type TeamMember = {
   id: string;
   name: string;
   title: string;
-  linkedin: string;
-  image?: string;
+  asOf: string;
 };
 
 export type Sector = {

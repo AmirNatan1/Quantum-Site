@@ -4,25 +4,22 @@ import "./styles/signal.css";
 import { getConfiguredSiteUrl, OrganizationStructuredData } from "./lib/structured-data";
 
 const siteUrl = getConfiguredSiteUrl();
-const socialImage = siteUrl ? new URL("/og-signal-v1.png", siteUrl).href : undefined;
 
 export const metadata: Metadata = {
   metadataBase: siteUrl ?? undefined,
   title: {
-    default: "Quantum-hub — Corporate innovation, proven in the field",
+    default: "Quantum Hub | Field-tested evidence for industrial technology",
     template: "%s",
   },
-  description:
-    "The shared innovation arm of Bazan, Hyundai, VDL and Taavura-Livnat. Operational needs become technology searches, then field evidence.",
+  description: "Quantum Hub connects operational needs inside major industrial groups with technology that is ready to be tested, then designs and runs the POC that produces a real answer.",
   alternates: siteUrl ? { canonical: "/" } : undefined,
   openGraph: {
     type: "website",
-    siteName: "Quantum-hub",
-    title: "Quantum-hub — Corporate innovation, proven in the field",
-    description: "Operational needs become technology searches, then field evidence.",
-    images: socialImage ? [{ url: socialImage, width: 1731, height: 909, alt: "An operational signal moving through testing stages toward a proven outcome." }] : undefined,
+    siteName: "Quantum Hub",
+    title: "Quantum Hub | Field-tested evidence for industrial technology",
+    description: "An industrial consortium that turns operational needs into field-tested evidence.",
   },
-  twitter: { card: "summary_large_image", images: socialImage ? [socialImage] : undefined },
+  twitter: { card: "summary" },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
