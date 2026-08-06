@@ -1,0 +1,554 @@
+/* ============================================================================
+   QUANTUM-HUB — SIGNAL NARRATIVE SYSTEM
+   ----------------------------------------------------------------------------
+   Drop-in stylesheet. Load AFTER your existing index.css.
+
+   Everything new is namespaced `qs-` so it cannot collide with your existing
+   classes (.story-step, .sector-tabs, .outcome-card, etc). Tokens are added
+   under new names on :root, so your current variables keep working untouched.
+
+   Contents
+     1. Rationalised type scale        (audit §4.1, §4.2, §4.3)
+     2. Two-tempo motion system        (audit §4.5)
+     3. Semantic accent assignment     (audit §4.4)
+     4. Accessibility corrections      (audit §5)
+     5. Signal path layer              (audit §6.1)
+     6. Sticky narrative panels        (audit §6.2)
+     7. Line reveal system             (audit §4.6)
+     8. Match instrument               (audit §6.3)
+     9. Outcome ledger                 (audit §6.4)
+    10. Designed reduced-motion path   (audit §6.5)
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. TYPE SCALE
+   Eight sizes total: three display, three body, two utility.
+   Replaces 20 rendered sizes and 13 unrelated clamp() formulas.
+   All rem-based, so OS/browser font-size preferences are respected.
+   Display floors are deliberately low enough for a 390px phone.
+   --------------------------------------------------------------------------- */
+:root {
+  --qs-fs-display-1: clamp(2.75rem, 7.2vw, 6.5rem);    /*  44 → 104px */
+  --qs-fs-display-2: clamp(2.25rem, 4.8vw, 4.25rem);   /*  36 →  68px */
+  --qs-fs-display-3: clamp(1.75rem, 2.8vw, 2.5rem);    /*  28 →  40px */
+
+  --qs-fs-body-lg:   clamp(1.0625rem, 1.3vw, 1.25rem); /*  17 →  20px */
+  --qs-fs-body:      1rem;                             /*        16px */
+  --qs-fs-body-sm:   0.9375rem;                        /*        15px */
+
+  --qs-fs-label:     0.75rem;                          /*        12px */
+  --qs-fs-micro:     0.6875rem;                        /*        11px — floor */
+
+  --qs-lh-display:   1.02;
+  --qs-lh-display-3: 1.12;
+  --qs-lh-body:      1.65;
+  --qs-lh-label:     1.2;
+
+  --qs-ls-display-1: -0.035em;
+  --qs-ls-display-2: -0.028em;
+  --qs-ls-display-3: -0.02em;
+  --qs-ls-label:     0.14em;
+}
+
+/* ---------------------------------------------------------------------------
+   2. MOTION — two tempos, deliberately separated.
+   Interface responds. Narrative unfolds. Conflating them is why the current
+   site reads as tidy rather than considered.
+   --------------------------------------------------------------------------- */
+:root {
+  --qs-t-ui-fast:        140ms;
+  --qs-t-ui:             180ms;
+  --qs-t-ui-slow:        260ms;
+
+  --qs-t-narrative:      900ms;
+  --qs-t-narrative-slow: 1200ms;
+  --qs-stagger:          70ms;
+
+  /* your existing curve, kept — it's good */
+  --qs-ease:           cubic-bezier(.22, .85, .24, 1);
+  /* stronger expo-out for narrative beats: fast commit, long settle */
+  --qs-ease-narrative: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   3. SEMANTIC ACCENTS
+   Magenta and teal stop being decoration and start carrying the argument:
+   magenta = live / in test / unproven.  teal = proven / signed / in production.
+   Both ramps already existed in your tokens; teal was simply unused.
+   --------------------------------------------------------------------------- */
+:root {
+  --qs-live:       var(--magenta-600, #bf2566);
+  --qs-live-soft:  var(--magenta-100, #fbe1eb);
+  --qs-proven:     var(--teal-500,    #1893aa);
+  --qs-proven-soft:var(--teal-100,    #e3f4f7);
+
+  --qs-stage:      var(--ink-950, #101314);
+  --qs-paper:      var(--ink-50,  #f7f9f9);
+  --qs-rule:       var(--ink-100, #e7ebec);
+  --qs-quiet:      var(--ink-600, #565d61);  /* 6.70:1 on white — passes */
+  --qs-ink:        var(--ink-900, #1a1e1f);
+}
+
+/* ---------------------------------------------------------------------------
+   4. ACCESSIBILITY CORRECTIONS
+   --------------------------------------------------------------------------- */
+
+/* 4a. Label colour. --ink-400 (#8d9599) measured 3.05:1 on white and fails.
+       --ink-600 measures 6.70:1. Applied at the 11px floor, never below. */
+.qs-label {
+  font: 500 var(--qs-fs-label) / var(--qs-lh-label) var(--font-mono, "JetBrains Mono", monospace);
+  letter-spacing: var(--qs-ls-label);
+  text-transform: uppercase;
+  color: var(--qs-quiet);
+}
+.qs-label--on-dark { color: rgba(255, 255, 255, .82); } /* was .38 → 3.55:1 */
+.qs-label--live    { color: var(--qs-live); }
+
+/* 4b. Deterministic scrim for text over video. Contrast becomes computable
+       regardless of what the footage is doing. Sized to the text column,
+       not the whole frame, so the footage still reads. */
+.qs-video-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg,
+      color-mix(in srgb, var(--qs-stage) 82%, transparent) 0%,
+      color-mix(in srgb, var(--qs-stage) 62%, transparent) 42%,
+      transparent 72%),
+    linear-gradient(to top,
+      color-mix(in srgb, var(--qs-stage) 55%, transparent) 0%,
+      transparent 45%);
+  pointer-events: none;
+}
+@supports not (background: color-mix(in srgb, red 50%, transparent)) {
+  .qs-video-scrim {
+    background:
+      linear-gradient(100deg, rgba(16,19,20,.82) 0%, rgba(16,19,20,.62) 42%, transparent 72%),
+      linear-gradient(to top, rgba(16,19,20,.55) 0%, transparent 45%);
+  }
+}
+
+/* 4c. Tap targets. Expands the hit area to 44px without changing how the
+       control looks — fixes the 21×21px story step buttons. */
+.qs-hit {
+  position: relative;
+}
+.qs-hit::before {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+
+/* 4d. Visible focus everywhere, not on five selectors. */
+.qs-root :focus-visible {
+  outline: 2px solid var(--qs-live);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* 4e. Skip link. */
+.qs-skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 999;
+  padding: .75rem 1.25rem;
+  background: var(--qs-stage);
+  color: #fff;
+  font: 600 var(--qs-fs-body-sm) / 1 var(--font-body, Manrope, sans-serif);
+  border-radius: 999px;
+  transition: top var(--qs-t-ui) var(--qs-ease);
+}
+.qs-skip:focus { top: 1rem; }
+
+/* 4f. Hover states guarded — prevents sticky tap-state on touch devices. */
+@media (hover: hover) and (pointer: fine) {
+  .qs-partner:hover      { color: var(--qs-live); background: var(--magenta-50, #fef3f7); }
+  .qs-case:hover         { border-color: var(--qs-proven); }
+  .qs-match-opt:hover    { background: var(--qs-live-soft); }
+}
+
+/* ---------------------------------------------------------------------------
+   5. SIGNAL PATH  (audit §6.1)
+   One continuous stroke spanning the document, drawn by scroll.
+   The <svg> is generated and sized by quantum-signal.js; this only styles it.
+   --------------------------------------------------------------------------- */
+.qs-signal-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+.qs-signal-track {
+  fill: none;
+  stroke: var(--qs-rule);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.qs-signal-draw {
+  fill: none;
+  stroke: var(--qs-live);
+  stroke-width: 2;
+  stroke-linecap: round;
+  /* dasharray + dashoffset are written by JS on rAF */
+}
+.qs-signal-draw--proven { stroke: var(--qs-proven); }
+
+/* the travelling head — a point of light at the draw frontier */
+.qs-signal-head {
+  fill: var(--qs-live);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--qs-live) 70%, transparent));
+}
+
+/* content must sit above the signal layer */
+.qs-above { position: relative; z-index: 1; }
+
+/* ---------------------------------------------------------------------------
+   6. STICKY NARRATIVE PANELS  (audit §6.2)
+   Five full-viewport panels. Mobile-first — sticky is NOT disabled at any
+   breakpoint, which is the explicit reversal of the current behaviour where
+   .story-sticky drops to position:relative below 860px.
+   --------------------------------------------------------------------------- */
+.qs-narrative { position: relative; }
+
+.qs-panel {
+  /* each panel owns a scroll budget; the inner element sticks within it */
+  height: 220vh;
+  position: relative;
+}
+.qs-panel__frame {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;              /* correct on mobile with dynamic toolbars */
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-content: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  overflow: hidden;
+}
+@media (width >= 900px) {
+  .qs-panel__frame {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: 1fr;
+    align-items: center;
+  }
+}
+
+.qs-panel__copy   { max-width: 34ch; align-self: center; }
+.qs-panel__index  { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 1.25rem; }
+.qs-panel__num    {
+  font: 500 var(--qs-fs-label) / 1 var(--font-mono, monospace);
+  letter-spacing: var(--qs-ls-label);
+  color: var(--qs-live);
+}
+.qs-panel__title {
+  font: 500 var(--qs-fs-display-2) / var(--qs-lh-display) var(--font-display, Poppins, sans-serif);
+  letter-spacing: var(--qs-ls-display-2);
+  color: var(--qs-ink);
+  margin: 0 0 1rem;
+}
+.qs-panel__body {
+  font: 400 var(--qs-fs-body-lg) / var(--qs-lh-body) var(--font-body, Manrope, sans-serif);
+  color: var(--qs-quiet);
+  margin: 0;
+}
+
+/* the diagram stage — each panel's figure is drawn here */
+.qs-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 44vh;
+  display: grid;
+  place-items: center;
+}
+.qs-stage svg { width: 100%; height: 100%; max-height: 62vh; overflow: visible; }
+
+/* progress-driven primitives. --p is written by JS: 0 → 1 across the panel. */
+.qs-draw {
+  fill: none;
+  stroke: var(--qs-ink);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-dasharray: var(--len, 1000);
+  stroke-dashoffset: calc(var(--len, 1000) * (1 - var(--p, 0)));
+}
+.qs-draw--live   { stroke: var(--qs-live);   stroke-width: 2; }
+.qs-draw--proven { stroke: var(--qs-proven); stroke-width: 2; }
+.qs-draw--hair   { stroke: var(--qs-rule);   stroke-width: 1; }
+
+.qs-fade  { opacity: var(--p, 0); }
+.qs-rise  { opacity: var(--p, 0); translate: 0 calc((1 - var(--p, 0)) * 18px); }
+.qs-scan  { transform: translateX(calc(var(--p, 0) * 100%)); }
+
+/* a candidate point in the scouting panel: most dim, a few stay lit */
+.qs-node        { fill: var(--qs-rule); transition: fill var(--qs-t-ui) var(--qs-ease); }
+.qs-node--hit   { fill: var(--qs-live); }
+.qs-node--dim   { fill: var(--qs-rule); opacity: .45; }
+
+/* ---------------------------------------------------------------------------
+   7. LINE REVEAL  (audit §4.6)
+   JS wraps each rendered line in .qs-line > .qs-line__i. Words stay intact,
+   so assistive tech reads the heading normally.
+   --------------------------------------------------------------------------- */
+.qs-reveal .qs-line { display: block; overflow: hidden; }
+.qs-reveal .qs-line__i {
+  display: block;
+  translate: 0 110%;
+  transition:
+    translate var(--qs-t-narrative) var(--qs-ease-narrative) var(--qs-d, 0ms),
+    opacity   var(--qs-t-narrative) var(--qs-ease-narrative) var(--qs-d, 0ms);
+  opacity: 0;
+}
+.qs-reveal.is-in .qs-line__i { translate: 0 0; opacity: 1; }
+
+/* block-level reveal for non-heading content */
+.qs-rise-in {
+  opacity: 0;
+  translate: 0 24px;
+  transition:
+    opacity   var(--qs-t-narrative) var(--qs-ease-narrative) var(--qs-d, 0ms),
+    translate var(--qs-t-narrative) var(--qs-ease-narrative) var(--qs-d, 0ms);
+}
+.qs-rise-in.is-in { opacity: 1; translate: 0 0; }
+
+/* ---------------------------------------------------------------------------
+   8. MATCH INSTRUMENT  (audit §6.3)
+   The conversion moment: a founder watches their own capability get matched
+   to a named partner constraint, site and evidence requirement.
+   --------------------------------------------------------------------------- */
+.qs-instrument {
+  border: 1px solid var(--qs-rule);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (width >= 860px) {
+  .qs-instrument { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); }
+}
+
+.qs-instrument__head {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: .875rem 1.25rem;
+  border-bottom: 1px solid var(--qs-rule);
+  background: var(--qs-paper);
+}
+.qs-instrument__state {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font: 500 var(--qs-fs-micro) / 1 var(--font-mono, monospace);
+  letter-spacing: var(--qs-ls-label);
+  text-transform: uppercase;
+  color: var(--qs-quiet);
+}
+.qs-instrument__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--qs-rule);
+  transition: background var(--qs-t-ui) var(--qs-ease);
+}
+.is-scanning .qs-instrument__dot { background: var(--qs-live); }
+.is-matched  .qs-instrument__dot { background: var(--qs-proven); }
+
+.qs-instrument__input { border-right: 1px solid var(--qs-rule); padding: 1.25rem; }
+.qs-instrument__out   { padding: 1.25rem; min-height: 17rem; }
+
+.qs-match-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--qs-rule);
+  border-radius: 9px;
+  background: #fff;
+  padding: .75rem .875rem;
+  margin-bottom: .5rem;
+  cursor: pointer;
+  font: 500 var(--qs-fs-body-sm) / 1.35 var(--font-body, Manrope, sans-serif);
+  color: var(--qs-ink);
+  transition:
+    border-color var(--qs-t-ui) var(--qs-ease),
+    background   var(--qs-t-ui) var(--qs-ease);
+}
+.qs-match-opt[aria-pressed="true"] {
+  border-color: var(--qs-live);
+  background: var(--magenta-50, #fef3f7);
+}
+.qs-match-opt small {
+  display: block;
+  margin-top: .25rem;
+  font: 400 var(--qs-fs-micro) / 1.3 var(--font-mono, monospace);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--qs-quiet);
+}
+
+.qs-result       { opacity: 0; transition: opacity var(--qs-t-ui-slow) var(--qs-ease); }
+.qs-result.is-in { opacity: 1; }
+.qs-result dt {
+  font: 500 var(--qs-fs-micro) / 1 var(--font-mono, monospace);
+  letter-spacing: var(--qs-ls-label);
+  text-transform: uppercase;
+  color: var(--qs-quiet);
+  margin-top: 1rem;
+}
+.qs-result dd {
+  margin: .3rem 0 0;
+  font: 400 var(--qs-fs-body) / 1.5 var(--font-body, Manrope, sans-serif);
+  color: var(--qs-ink);
+}
+.qs-result dd strong { font-weight: 600; }
+
+/* the scan sweep */
+.qs-sweep {
+  position: relative;
+  height: 2px;
+  background: var(--qs-rule);
+  overflow: hidden;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+}
+.qs-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, var(--qs-live), transparent);
+  translate: -100% 0;
+}
+.is-scanning .qs-sweep::after { animation: qs-sweep 900ms var(--qs-ease) 1; }
+@keyframes qs-sweep { to { translate: 320% 0; } }
+
+/* ---------------------------------------------------------------------------
+   9. OUTCOME LEDGER  (audit §6.4)
+   Each case resolves from live (magenta, in test) to proven (teal, signed).
+   --------------------------------------------------------------------------- */
+.qs-ledger { display: grid; gap: 1px; background: var(--qs-rule); }
+
+.qs-case {
+  background: #fff;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  display: grid;
+  gap: .5rem 1.5rem;
+  grid-template-columns: 1fr;
+  border-left: 3px solid var(--qs-rule);
+  transition: border-color var(--qs-t-narrative) var(--qs-ease-narrative);
+}
+@media (width >= 760px) {
+  .qs-case { grid-template-columns: 8rem minmax(0, 1fr) 14rem; align-items: start; }
+}
+.qs-case.is-proven { border-left-color: var(--qs-proven); }
+
+.qs-case__name {
+  font: 500 var(--qs-fs-display-3) / var(--qs-lh-display-3) var(--font-display, Poppins, sans-serif);
+  letter-spacing: var(--qs-ls-display-3);
+  color: var(--qs-ink);
+  margin: 0;
+}
+.qs-case__what {
+  font: 400 var(--qs-fs-body-sm) / 1.55 var(--font-body, Manrope, sans-serif);
+  color: var(--qs-quiet);
+  margin: 0;
+}
+
+/* the state chip flips live → proven as the row resolves */
+.qs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .3rem .6rem;
+  border-radius: 999px;
+  font: 500 var(--qs-fs-micro) / 1 var(--font-mono, monospace);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--qs-live-soft);
+  color: var(--magenta-800, #851846);
+  transition:
+    background var(--qs-t-narrative) var(--qs-ease-narrative),
+    color      var(--qs-t-narrative) var(--qs-ease-narrative);
+}
+.is-proven .qs-chip {
+  background: var(--qs-proven-soft);
+  color: var(--teal-600, #13798c);
+}
+
+.qs-case__outcome {
+  font: 600 var(--qs-fs-body-sm) / 1.45 var(--font-body, Manrope, sans-serif);
+  color: var(--qs-ink);
+  opacity: 0;
+  translate: 0 8px;
+  transition:
+    opacity   var(--qs-t-narrative) var(--qs-ease-narrative) 220ms,
+    translate var(--qs-t-narrative) var(--qs-ease-narrative) 220ms;
+}
+.is-proven .qs-case__outcome { opacity: 1; translate: 0 0; }
+
+/* ---------------------------------------------------------------------------
+   10. REDUCED MOTION — a designed path, not a disable switch.  (audit §6.5)
+   Under reduce: the signal path renders COMPLETE rather than not at all,
+   panels cross-fade instead of transforming, the instrument resolves
+   instantly, and the ledger shows its proven state immediately.
+   The story still reads. It just doesn't move.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .qs-signal-draw,
+  .qs-draw {
+    stroke-dashoffset: 0 !important;   /* fully drawn */
+  }
+  .qs-signal-head { display: none; }
+
+  .qs-fade, .qs-rise { opacity: 1 !important; translate: none !important; }
+  .qs-scan { transform: none !important; }
+
+  .qs-reveal .qs-line__i,
+  .qs-rise-in {
+    opacity: 1 !important;
+    translate: none !important;
+    transition-duration: 1ms !important;
+  }
+
+  .qs-panel { height: auto; }
+  .qs-panel__frame {
+    position: static;
+    height: auto;
+    min-height: 0;
+    padding-block: clamp(3rem, 8vw, 6rem);
+  }
+
+  .qs-result { opacity: 1; transition: none; }
+  .is-scanning .qs-sweep::after { animation: none; }
+
+  .qs-case { border-left-color: var(--qs-proven); }
+  .qs-case__outcome { opacity: 1; translate: none; transition: none; }
+  .qs-chip { background: var(--qs-proven-soft); color: var(--teal-600, #13798c); }
+
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   BONUS — the 861–1100px tier the current CSS is missing (audit §7).
+   Container queries would be the structural fix; this is the quick one.
+   --------------------------------------------------------------------------- */
+@media (width >= 861px) and (width <= 1100px) {
+  .qs-panel__frame { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .qs-panel__copy  { max-width: none; }
+  .qs-instrument   { grid-template-columns: 1fr; }
+  .qs-instrument__input { border-right: 0; border-bottom: 1px solid var(--qs-rule); }
+}

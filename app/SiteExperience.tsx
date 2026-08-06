@@ -1,15 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { KeyboardEvent, ReactNode, useEffect, useState } from "react";
 import {
   outcomes,
   partners,
   sectors,
-  signalSteps,
   team,
   updates,
 } from "./content";
+import { caseStudies, metrics } from "./data";
+import { AccentHeadingText } from "./components/brand/AccentHeadingText";
+import { ConsortiumMark } from "./components/brand/ConsortiumMark";
+import { HeroMedia } from "./components/media/HeroMedia";
+import { AudienceSelector } from "./components/home/AudienceSelector";
+import { ProcessStory } from "./components/home/ProcessStory";
+import { OutcomeTimeline } from "./components/home/OutcomeTimeline";
+import { ClosingConversion } from "./components/home/ClosingConversion";
+import { NeedsBoard } from "./components/needs/NeedsBoard";
+import { MatchInstrument } from "./components/match/MatchInstrument";
+import { EvidenceLedger } from "./components/evidence/EvidenceLedger";
+import { SparkStatusPanel } from "./components/spark/SparkStatusPanel";
+import { LeadForm } from "./components/forms/LeadForm";
 
 type RouteProps = { route: string };
 
@@ -21,24 +33,31 @@ const navItems = [
   ["About", "/about"],
 ];
 
+function handleTabKey(
+  event: KeyboardEvent<HTMLButtonElement>,
+  current: number,
+  count: number,
+  setCurrent: (index: number) => void,
+  idPrefix: string,
+) {
+  let next = current;
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % count;
+  else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + count) % count;
+  else if (event.key === "Home") next = 0;
+  else if (event.key === "End") next = count - 1;
+  else return;
+
+  event.preventDefault();
+  setCurrent(next);
+  document.getElementById(`${idPrefix}-${next}`)?.focus();
+}
+
 function Arrow() {
   return <span className="arrow-line" aria-hidden="true" />;
 }
 
 function TitleText({ text }: { text: string }) {
-  return (
-    <>
-      {text.split(/(\s+)/g).map((word, wordIndex) =>
-        /^\s+$/.test(word) ? word : (
-          <span className="title-word" key={`${word}-${wordIndex}`}>
-            {word.split(/(i)/g).map((part, partIndex) =>
-              part === "i" ? <span className="title-i" key={`${part}-${partIndex}`}>{part}</span> : part,
-            )}
-          </span>
-        ),
-      )}
-    </>
-  );
+  return <AccentHeadingText text={text} />;
 }
 
 function Eyebrow({ children, inverse = false }: { children: ReactNode; inverse?: boolean }) {
@@ -94,130 +113,8 @@ function SectionHeading({
   );
 }
 
-function SignalField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    let frame = 0;
-    let raf = 0;
-    let width = 0;
-    let height = 0;
-    let pointerX = 0.5;
-    let pointerY = 0.5;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const points = Array.from({ length: 34 }, (_, index) => ({
-      angle: (index / 34) * Math.PI * 2,
-      radius: 0.16 + ((index * 17) % 22) / 100,
-      speed: 0.0004 + ((index * 7) % 8) * 0.00008,
-      phase: ((index * 13) % 31) / 31,
-    }));
-
-    const resize = () => {
-      const box = canvas.getBoundingClientRect();
-      width = box.width;
-      height = box.height;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    const move = (event: PointerEvent) => {
-      const box = canvas.getBoundingClientRect();
-      pointerX = (event.clientX - box.left) / box.width;
-      pointerY = (event.clientY - box.top) / box.height;
-    };
-
-    const draw = () => {
-      frame += reduceMotion ? 0 : 1;
-      context.clearRect(0, 0, width, height);
-      const cx = width * (0.5 + (pointerX - 0.5) * 0.035);
-      const cy = height * (0.5 + (pointerY - 0.5) * 0.035);
-      const scale = Math.min(width, height);
-
-      context.strokeStyle = "rgba(42,46,48,.12)";
-      context.lineWidth = 1;
-      [0.21, 0.31, 0.405].forEach((radius) => {
-        context.beginPath();
-        context.arc(cx, cy, scale * radius, 0, Math.PI * 2);
-        context.stroke();
-      });
-
-      const positions = points.map((point) => {
-        const theta = point.angle + frame * point.speed;
-        const pulse = Math.sin(frame * 0.012 + point.phase * Math.PI * 2) * 3;
-        return {
-          x: cx + Math.cos(theta) * (scale * point.radius + pulse),
-          y: cy + Math.sin(theta) * (scale * point.radius + pulse),
-        };
-      });
-
-      positions.forEach((point, index) => {
-        const next = positions[(index + 7) % positions.length];
-        const distance = Math.hypot(point.x - next.x, point.y - next.y);
-        if (distance < scale * 0.43) {
-          context.strokeStyle = `rgba(42,46,48,${Math.max(0.025, 0.12 - distance / scale / 4)})`;
-          context.beginPath();
-          context.moveTo(point.x, point.y);
-          context.lineTo(next.x, next.y);
-          context.stroke();
-        }
-      });
-
-      positions.forEach((point, index) => {
-        const active = index % 9 === 0;
-        context.fillStyle = active ? "#D62C72" : "rgba(42,46,48,.48)";
-        context.beginPath();
-        context.arc(point.x, point.y, active ? 3.2 : 1.45, 0, Math.PI * 2);
-        context.fill();
-      });
-
-      context.fillStyle = "#1A1E1F";
-      context.beginPath();
-      context.arc(cx, cy, 7, 0, Math.PI * 2);
-      context.fill();
-      context.strokeStyle = "#D62C72";
-      context.lineWidth = 2;
-      context.beginPath();
-      context.arc(cx, cy, 16, 0, Math.PI * 2);
-      context.stroke();
-
-      if (!reduceMotion) raf = requestAnimationFrame(draw);
-    };
-
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-    canvas.addEventListener("pointermove", move);
-    resize();
-    draw();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      observer.disconnect();
-      canvas.removeEventListener("pointermove", move);
-    };
-  }, []);
-
-  return (
-    <div className="signal-field" role="img" aria-label="A responsive field of connected signals converging on one test point">
-      <canvas ref={canvasRef} />
-      <div className="signal-label signal-label-one"><span /> operational need</div>
-      <div className="signal-label signal-label-two"><span /> technology match</div>
-      <div className="signal-label signal-label-three"><span /> field evidence</div>
-      <div className="signal-core-label">Q / POC</div>
-    </div>
-  );
-}
-
 function SiteHeader({ route }: RouteProps) {
   const [open, setOpen] = useState(false);
-
-  useEffect(() => setOpen(false), [route]);
 
   return (
     <header className="site-header" data-site-header>
@@ -236,7 +133,7 @@ function SiteHeader({ route }: RouteProps) {
         </button>
         <nav className={`site-nav${open ? " is-open" : ""}`} aria-label="Primary navigation">
           {navItems.map(([label, href]) => (
-            <Link key={href} href={href} className={route === href ? "is-active" : ""}>
+            <Link key={href} href={href} className={route === href ? "is-active" : ""} onClick={() => setOpen(false)}>
               {label}
             </Link>
           ))}
@@ -311,21 +208,15 @@ function PageHero({
 }
 
 function MetricBand() {
-  const metrics = [
-    ["4", "corporate partners"],
-    ["110", "POCs executed"],
-    ["29", "group-wide implementations"],
-    ["4", "operating sectors"],
-  ];
   return (
     <section className="metric-band">
       <div className="shell">
         <Eyebrow>built around partner needs</Eyebrow>
         <div className="metric-grid">
-          {metrics.map(([value, label], index) => (
-            <div className="metric" key={label} data-reveal style={{ "--reveal-delay": `${index * 70}ms` } as React.CSSProperties}>
-              <strong data-count={value}>{value}</strong>
-              <span>{label}</span>
+          {metrics.map((metric, index) => (
+            <div className="metric" key={metric.id} data-reveal style={{ "--reveal-delay": `${index * 70}ms` } as React.CSSProperties}>
+              <strong data-count={metric.value}>{metric.value}</strong>
+              <span>{metric.label}<small>Evidence date pending</small></span>
             </div>
           ))}
         </div>
@@ -340,7 +231,7 @@ function PartnerStrip() {
       <div className="shell partner-strip-inner">
         <span className="partner-strip-label">Shared by</span>
         {partners.map((partner) => (
-          <a href={partner.href} target="_blank" rel="noreferrer" key={partner.short}>{partner.short}</a>
+          <a href={partner.href} target="_blank" rel="noreferrer" aria-label={`${partner.name} website`} key={partner.short}><ConsortiumMark partner={partner} /></a>
         ))}
       </div>
     </section>
@@ -348,43 +239,7 @@ function PartnerStrip() {
 }
 
 function StorySection() {
-  const [active, setActive] = useState(0);
-  return (
-    <section className="story-section" data-story>
-      <div className="shell story-layout">
-        <div className="story-sticky">
-          <SectionHeading
-            eyebrow="the route from need to evidence"
-            title="Follow the signal through Quantum-hub."
-            body="Each step carries context forward, so the startup, the partner and the field team arrive at the test with one shared definition of success."
-          />
-          <div className="story-console" aria-live="polite">
-            <div className="console-head"><span>Q / SIGNAL</span><span>0{active + 1} OF 05</span></div>
-            <div className="console-orbit" aria-hidden="true">
-              <i /><i /><i /><b />
-            </div>
-            <strong>{signalSteps[active].title}</strong>
-            <p>{signalSteps[active].body}</p>
-          </div>
-        </div>
-        <div className="story-steps">
-          <div className="story-rail" aria-hidden="true"><span /></div>
-          {signalSteps.map((step, index) => (
-            <article
-              className={`story-step${active === index ? " is-active" : ""}`}
-              key={step.number}
-              data-story-step
-              onMouseEnter={() => setActive(index)}
-            >
-              <span>{step.number}</span>
-              <div><h3><TitleText text={step.title} /></h3><p>{step.body}</p></div>
-              <button type="button" onClick={() => setActive(index)} aria-label={`Show ${step.title}`}><span /></button>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+  return <ProcessStory />;
 }
 
 function SectorSection({ full = false }: { full?: boolean }) {
@@ -414,18 +269,22 @@ function SectorSection({ full = false }: { full?: boolean }) {
           <div className="sector-tabs" role="tablist" aria-label="Industries">
             {sectors.map((sector, index) => (
               <button
+                id={`sector-tab-${index}`}
                 type="button"
                 role="tab"
                 aria-selected={active === index}
+                aria-controls="sector-tabpanel"
+                tabIndex={active === index ? 0 : -1}
                 className={active === index ? "is-active" : ""}
                 key={sector.key}
                 onClick={() => setActive(index)}
+                onKeyDown={(event) => handleTabKey(event, index, sectors.length, setActive, "sector-tab")}
               >
                 <span>{sector.number}</span>{sector.title}
               </button>
             ))}
           </div>
-          <div className="sector-display" role="tabpanel">
+          <div id="sector-tabpanel" className="sector-display" role="tabpanel" aria-labelledby={`sector-tab-${active}`}>
             <div className="sector-radar" aria-hidden="true"><span /><span /><span /><b /></div>
             <div className="sector-display-copy">
               <span>ACTIVE FIELD / {selected.number}</span>
@@ -496,11 +355,12 @@ function PlaygroundPanel() {
       </div>
       <div className="playground-controls" role="tablist" aria-label="Example POC measurements">
         {modes.map((item, index) => (
-          <button key={item[0]} type="button" className={mode === index ? "is-active" : ""} onClick={() => setMode(index)}>
+          <button key={item[0]} id={`playground-tab-${index}`} type="button" role="tab" aria-selected={mode === index} aria-controls="playground-readout" tabIndex={mode === index ? 0 : -1} className={mode === index ? "is-active" : ""} onClick={() => setMode(index)} onKeyDown={(event) => handleTabKey(event, index, modes.length, setMode, "playground-tab")}>
             <span>{item[0]}</span><b>{item[1]}</b><small>{item[2]}</small>
           </button>
         ))}
       </div>
+      <p id="playground-readout" className="sr-only" role="tabpanel" aria-labelledby={`playground-tab-${mode}`}>{modes[mode].join(", ")}</p>
     </div>
   );
 }
@@ -539,16 +399,11 @@ function HomePage() {
   return (
     <>
       <section className="home-hero home-video-hero">
-        <div className="home-video-bg" aria-hidden="true">
-          <video autoPlay muted loop playsInline preload="metadata" poster="/media/poc-playground-original.png">
-            <source src="/media/poc-playground.mp4" type="video/mp4" />
-          </video>
-          <div className="home-video-shade" />
-        </div>
+        <div className="home-video-bg"><HeroMedia poster="/media/hero-quantum-hub-v1.webp" /></div>
         <div className="shell hero-grid">
           <div className="hero-copy" data-reveal>
             <Eyebrow>corporate innovation consortium</Eyebrow>
-            <h1><span><TitleText text="Operational needs." /></span><span><TitleText text="Proven technology." /></span></h1>
+            <h1 aria-label="Operational needs. Proven technology."><span><TitleText text="Operational needs." /></span><span><TitleText text="Proven technology." /></span></h1>
             <p>The shared innovation arm of Bazan, Hyundai, VDL and Taavura-Livnat. We turn operational needs into technology searches, then prove the fit in the field.</p>
             <div className="hero-actions">
               <Action href="/for-partners">Bring a challenge</Action>
@@ -566,10 +421,14 @@ function HomePage() {
           <div data-reveal><p>Quantum-hub is the shared innovation arm of four industrial groups. Across automotive, logistics, Industry 4.0 and energy, we scout technology against needs our partners define, then prove the strongest matches in a workshop built for testing rather than presenting.</p><Action href="/about" secondary>Meet Quantum-hub</Action></div>
         </div>
       </section>
+      <AudienceSelector />
       <StorySection />
       <section className="statement-band"><div className="shell"><p>We prove the fit before partners commit to rollout.</p><span aria-hidden="true" /></div></section>
+      <NeedsBoard />
+      <MatchInstrument />
       <SectorSection />
       <ProofSection />
+      <OutcomeTimeline />
       <SparkBand />
       <section className="playground-section section-pad">
         <div className="shell playground-layout">
@@ -580,7 +439,7 @@ function HomePage() {
           <PlaygroundPanel />
         </div>
       </section>
-      <ClosingCTA />
+      <ClosingConversion />
     </>
   );
 }
@@ -625,7 +484,7 @@ function AboutPage() {
   return (
     <>
       <PageHero eyebrow="about quantum-hub" title="The people between industry and innovation" body="Quantum-hub has operated since 2020, moving from building relationships and capability to running POCs at scale across the partner groups." />
-      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="why we exist" title="Two worlds, one translator" /><p data-reveal>The four partner companies know their operations. Startups know their technology. Neither speaks the other's language well enough to move quickly. We translate in both directions, scope a use case both sides recognize, and then settle it with a POC rather than a meeting.</p></div></section>
+      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="why we exist" title="Two worlds, one translator" /><p data-reveal>The four partner companies know their operations. Startups know their technology. Neither speaks the other&apos;s language well enough to move quickly. We translate in both directions, scope a use case both sides recognize, and then settle it with a POC rather than a meeting.</p></div></section>
       <section className="team-section section-pad"><div className="shell"><SectionHeading eyebrow="our team" title="Who you'll work with" /><TeamGrid /></div></section>
       <ClosingCTA title="Come see the playground." />
     </>
@@ -695,6 +554,7 @@ function SparkPage() {
   return (
     <>
       <PageHero eyebrow="spark — poc runway program" title="From application to industrial POC" body="SPARK connects MVP+ startups with four industrial groups and runs a real POC around a use case one of them selects. No equity is taken and there is no participation fee." actions={<Action href="/spark-register">Register</Action>} orbitDot={false} />
+      <section className="section-pad"><div className="shell"><SparkStatusPanel /></div></section>
       {/* TBC: confirm SPARK cohort count */}
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="the operating conditions" title="Four conditions. One credible POC." body="SPARK works because four things are true at once. Remove any of them and a POC becomes a demonstration instead of a decision." /><CardGrid cards={conditions} columns={4} /></div></section>
       <section className="spark-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="program route" title="Five steps in" /><div className="vertical-steps">{steps.map(([title, body], index) => <article key={title} data-reveal><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></article>)}</div></div></section>
@@ -726,6 +586,8 @@ function PocsPage() {
     <>
       <PageHero eyebrow="proofs of concept" title="Make uncertainty smaller before rollout gets bigger." body="A proof of concept is a way of buying information. Run properly, it costs one scoped test. Run badly, it costs a rollout decision made on a guess." orbitDot={false} />
       <section id="evidence-engine" className="section-pad"><div className="shell"><SectionHeading eyebrow="the evidence engine" title="A disciplined trial answers one unknown at a time." /><CardGrid cards={evidence} columns={4} /></div></section>
+      <NeedsBoard />
+      <MatchInstrument />
       <section className="playground-section section-pad subtle-section"><div className="shell playground-layout"><div><SectionHeading eyebrow="the playground" title="A workshop, not a showroom" body="We design, plan and execute POCs in-house. That includes a dedicated testing vehicle — a Kia EV6 built out as an integrated hardware and software platform — and access to live partner environments for tests that cannot be simulated." />{/* TBC: beta-testing site count; workshop location */}<Action href="/case-studies" secondary>See the field evidence</Action></div><PlaygroundPanel /></div></section>
       <section className="actasys-teaser section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="a poc in action" title="Actasys: sensor cleaning under test" /><div data-reveal><p>ActaJet tested across cameras and lidar, at multiple mounting positions, speeds, driving scenarios, weather and light conditions.</p><Action href="/case-studies/actasys" secondary>Open the field note</Action></div></div></section>
       <ClosingCTA />
@@ -744,11 +606,13 @@ function CaseStudiesPage() {
 }
 
 function ActasysPage() {
+  const actasys = caseStudies.find((study) => study.id === "actasys");
   return (
     <>
       <PageHero eyebrow="automotive · sensor cleaning" title="Actasys: keeping sensors clear" body="A field test structured around the conditions that decide whether a sensor-cleaning system can support ADAS and autonomous functions." />
-      <section className="case-detail section-pad"><div className="shell"><article data-reveal><span>01</span><h2><TitleText text="The technology" /></h2><p>ActaJet is an electronically controlled system of small actuators that generate strong, localized jets of air at the sensor itself. Rather than washing a lens, it keeps the sensor's field of view clear continuously — which is what ADAS and autonomous functions depend on.</p></article><article data-reveal><span>02</span><h2><TitleText text="The test" /></h2><p>Actasys supplied several systems so cleaning performance could be measured rather than asserted. The POC covered ADAS cameras and lidar, lidar mounted both on the roof and in the grille, parking, urban and highway driving, and conditions including rain, mud and road splatter.</p></article><article data-reveal><span>03</span><h2><TitleText text="Why it was structured this way" /></h2><p>A sensor cleaning system only matters in the conditions that dirty a sensor. Testing it across mounting positions, speeds and weather was the only way to produce a result a partner could act on.</p></article></div></section>
+      <section className="case-detail section-pad"><div className="shell"><article data-reveal><span>01</span><h2><TitleText text="The technology" /></h2><p>ActaJet is an electronically controlled system of small actuators that generate strong, localized jets of air at the sensor itself. Rather than washing a lens, it keeps the sensor&apos;s field of view clear continuously — which is what ADAS and autonomous functions depend on.</p></article><article data-reveal><span>02</span><h2><TitleText text="The test" /></h2><p>Actasys supplied several systems so cleaning performance could be measured rather than asserted. The POC covered ADAS cameras and lidar, lidar mounted both on the roof and in the grille, parking, urban and highway driving, and conditions including rain, mud and road splatter.</p></article><article data-reveal><span>03</span><h2><TitleText text="Why it was structured this way" /></h2><p>A sensor cleaning system only matters in the conditions that dirty a sensor. Testing it across mounting positions, speeds and weather was the only way to produce a result a partner could act on.</p></article></div></section>
       <section className="test-matrix-section"><div className="shell"><div className="test-matrix" data-reveal><div><span>TEST MATRIX / ACTAJET</span><b>FIELD CONFIGURATION</b></div>{[["Sensors", "Camera · Lidar"], ["Mounting", "Roof · Grille"], ["Routes", "Parking · Urban · Highway"], ["Conditions", "Rain · Mud · Road splatter"]].map(([key, value]) => <div key={key}><span>{key}</span><strong>{value}</strong><i /></div>)}</div></div></section>
+      {actasys ? <section className="section-pad"><div className="shell"><EvidenceLedger study={actasys} /></div></section> : null}
       <ClosingCTA title="A POC should answer the adoption question." label="Design a test" />
     </>
   );
@@ -764,28 +628,20 @@ function UpdatesPage() {
   );
 }
 
-function FormStatus() {
-  return <div className="form-status" role="status"><span>Preview mode</span><h3><TitleText text="The form is ready for connection." /></h3><p>Until the public inbox is confirmed, reach Quantum-hub through LinkedIn.</p><a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Open LinkedIn <Arrow /></a></div>;
-}
-
 function ContactPage() {
-  const [sent, setSent] = useState(false);
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setSent(true); };
   return (
     <>
       <PageHero eyebrow="contact" title="Get in touch" body="If you have an operational challenge worth testing, or a product you think fits one, tell us in a few lines and we'll come back to you." />
-      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>one clear signal</Eyebrow><h2><TitleText text="Start with the unknown." /></h2><p>A short description is enough. Tell us what needs to change, or what your product can already do in the field.</p>{/* TBC: public contact email address */}<a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Quantum-hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal>{sent ? <FormStatus /> : <form onSubmit={submit}><label>Work email<input type="email" name="email" autoComplete="email" required placeholder="you@company.com" /></label><label>Message<textarea name="message" required rows={7} placeholder="What are you trying to test?" /></label><button className="form-submit" type="submit">Send message <Arrow /></button></form>}</div></div></section>
+      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>one clear signal</Eyebrow><h2><TitleText text="Start with the unknown." /></h2><p>A short description is enough. Tell us what needs to change, or what your product can already do in the field.</p><a href="https://www.linkedin.com/company/quantum-hub/" target="_blank" rel="noreferrer">Quantum-hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal><LeadForm kind="contact" /></div></div></section>
     </>
   );
 }
 
 function SparkRegisterPage() {
-  const [sent, setSent] = useState(false);
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setSent(true); };
   return (
     <>
       <PageHero eyebrow="spark application" title="Apply to SPARK" body="Applications are reviewed against needs the partner companies have already defined. Tell us what your product does today, and where it has run." />
-      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>field readiness</Eyebrow><h2><TitleText text="Show us what works today." /></h2><p>Equity-free. No participation fee.</p><div className="application-rail"><span>01 · Working product</span><span>02 · Real use case</span><span>03 · Field support</span></div></div><div className="form-card" data-reveal>{sent ? <FormStatus /> : <form onSubmit={submit} className="application-form"><label>Full name<input name="name" autoComplete="name" required /></label><label>Work email<input type="email" name="email" autoComplete="email" required /></label><label>Company<input name="company" autoComplete="organization" required /></label><label>Company website<input type="url" name="website" placeholder="https://" required /></label><label className="field-wide">What does the product do today?<textarea name="product" rows={5} required /></label><label className="field-wide">Where has it already run?<textarea name="field" rows={4} required /></label><label className="field-wide checkbox-field"><input type="checkbox" required /><span>I confirm this information is accurate and can be reviewed by Quantum-hub.</span></label><button className="form-submit field-wide" type="submit">Submit application <Arrow /></button></form>}</div></div></section>
+      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>field readiness</Eyebrow><h2><TitleText text="Show us what works today." /></h2><p>Equity-free. No participation fee. Current application dates are still to be confirmed.</p><div className="application-rail"><span>01 · Working product</span><span>02 · Real use case</span><span>03 · Field support</span></div></div><div className="form-card" data-reveal><LeadForm kind="spark-register" /></div></div></section>
     </>
   );
 }
@@ -811,19 +667,17 @@ export default function SiteExperience({ route }: RouteProps) {
     document.documentElement.classList.add("js-ready");
     const header = document.querySelector<HTMLElement>("[data-site-header]");
     const progress = document.querySelector<HTMLElement>("[data-scroll-progress]");
+    let frame = 0;
     const updateScroll = () => {
+      frame = 0;
       header?.classList.toggle("is-scrolled", window.scrollY > 12);
       if (progress) {
         const height = document.documentElement.scrollHeight - window.innerHeight;
         progress.style.transform = `scaleX(${height > 0 ? window.scrollY / height : 0})`;
       }
-      const story = document.querySelector<HTMLElement>("[data-story]");
-      if (story) {
-        const box = story.getBoundingClientRect();
-        const span = Math.max(1, box.height - window.innerHeight);
-        const value = Math.max(0, Math.min(1, -box.top / span));
-        story.style.setProperty("--story-progress", `${value}`);
-      }
+    };
+    const scheduleScrollUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateScroll);
     };
     const reveals = document.querySelectorAll<HTMLElement>("[data-reveal]");
     const revealObserver = new IntersectionObserver((entries) => {
@@ -835,20 +689,22 @@ export default function SiteExperience({ route }: RouteProps) {
       });
     }, { threshold: 0.12 });
     reveals.forEach((element) => revealObserver.observe(element));
-    window.addEventListener("scroll", updateScroll, { passive: true });
+    window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
     updateScroll();
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     return () => {
       revealObserver.disconnect();
-      window.removeEventListener("scroll", updateScroll);
+      window.removeEventListener("scroll", scheduleScrollUpdate);
+      window.cancelAnimationFrame(frame);
     };
   }, [route]);
 
   return (
     <>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="scroll-progress" data-scroll-progress aria-hidden="true" />
       <SiteHeader route={route} />
-      <main><RoutePage route={route} /></main>
+      <main id="main-content" tabIndex={-1}><RoutePage route={route} /></main>
       <SiteFooter />
     </>
   );
