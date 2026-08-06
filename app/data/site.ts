@@ -1,5 +1,6 @@
 import type {
   AudienceCta,
+  HomeSceneContract,
   Partner,
   ProcessStage,
   Sector,
@@ -90,12 +91,143 @@ export const audienceCtas = [
 ] as const satisfies readonly AudienceCta[];
 
 export const processStages = [
-  { id: "define", order: 1, title: "Define the need", shortLabel: "Define", description: "The partner states the operational problem. We frame it into something testable.", state: "unresolved" },
-  { id: "plan", order: 2, title: "Plan the POC", shortLabel: "Plan", description: "Scope, statement of work, test scenarios, KPIs and pass criteria are agreed by all sides.", state: "in-progress" },
-  { id: "execute", order: 3, title: "Execute", shortLabel: "Execute", description: "Integration, instrumentation and testing happen in the environment where the technology has to perform.", state: "in-progress" },
-  { id: "report", order: 4, title: "Report", shortLabel: "Report", description: "Results are reported per scenario against the criteria set before testing.", state: "in-progress" },
-  { id: "decide", order: 5, title: "Decide", shortLabel: "Decide", description: "The partner decides whether to take it further, test again with a changed scope, or stop.", state: "proven" },
+  {
+    id: "operational-need",
+    order: 1,
+    title: "Operational need",
+    shortLabel: "Need",
+    description: "The partner states the operational problem. We frame it into something testable.",
+    state: "unresolved",
+    diagram: "constraints",
+    diagramLabels: ["Operational problem", "Testable question"],
+  },
+  {
+    id: "global-scouting",
+    order: 2,
+    title: "Global scouting",
+    shortLabel: "Scouting",
+    description: "Once the need is framed, we search globally, assess candidates technically and put a short list in front of the people who will host the test.",
+    state: "unresolved",
+    diagram: "scouting",
+    diagramLabels: ["Search globally", "Assess candidates technically", "Short list"],
+  },
+  {
+    id: "partner-match",
+    order: 3,
+    title: "Partner match",
+    shortLabel: "Match",
+    description: "The startup and partner define the question, test and criteria.",
+    state: "in-progress",
+    diagram: "alignment",
+    diagramLabels: ["Startup", "Partner", "Question", "Test", "Internal owner", "Criteria"],
+  },
+  {
+    id: "field-poc",
+    order: 4,
+    title: "Field POC",
+    shortLabel: "Field POC",
+    description: "Integration, instrumentation and testing happen in the environment where the technology has to perform.",
+    supportingText: "Results are reported per scenario against the criteria set before testing.",
+    state: "in-progress",
+    diagram: "evidence",
+    diagramLabels: ["Integration", "Instrumentation", "Testing", "Criteria", "Results per scenario"],
+  },
+  {
+    id: "scale-what-works",
+    order: 5,
+    title: "Scale what works",
+    shortLabel: "Resolution",
+    description: "The partner decides whether to take it further, test again with a changed scope, or stop.",
+    state: "proven",
+    diagram: "resolution",
+    diagramLabels: ["Decision", "Evidence"],
+    resolutionLabels: ["Scale", "Reconfigure + retest", "Useful no"],
+  },
 ] as const satisfies readonly ProcessStage[];
+
+export const homeNarrativeCopy = {
+  consortium: {
+    eyebrow: "the consortium",
+    title: "An industrial consortium built to test",
+    body: "Quantum Hub is wholly owned by the Taavura-Livnat Group and operates as a shared platform for a group of industrial partners.",
+    partnerLabel: "Who is behind this",
+  },
+  evidence: {
+    eyebrow: "what a POC produces",
+    title: "A written answer, against criteria agreed in advance",
+    body: "Before anything is built, both sides write down what success looks like. The final report states objectives, setup, test plan, results per scenario, conclusions and recommendations.",
+    items: [
+      ["Criteria first", "Pass conditions are defined per test scenario before testing begins."],
+      ["Real environments", "Testing can take place in industrial facilities and operating environments appropriate to the question."],
+      ["An answer either way", "Results that do not support a rollout are reported as clearly as results that do."],
+    ],
+  },
+  alignment: {
+    eyebrow: "the model",
+    title: "We match technology to need — and we build the test ourselves",
+    body: "We scout and match, and then do the engineering: fabricating mounts, routing wiring, integrating sensors, standing up an isolated test network and instrumenting a vehicle. The match is useful only if someone can build the test.",
+    notice: "Illustrative operating model — not a live match.",
+    inputs: ["Operational problem", "Working product", "Operating environment", "Internal owner", "Success criteria"],
+    outputs: ["Test design", "Evidence"],
+    action: "About Quantum Hub",
+  },
+  story: {
+    eyebrow: "how it runs",
+    title: "Five stages, from need to decision",
+    body: "Each stage carries context forward so the startup, partner and test team arrive with one shared definition of success.",
+  },
+  conversion: {
+    neutral: {
+      eyebrow: "Two ways in",
+      title: "Start with the need, not the technology",
+      body: "If you run an operation with a problem worth testing, or you have built something that needs to prove itself in the field, the conversation starts the same way.",
+    },
+    partner: {
+      eyebrow: "For industry",
+      title: "Bring the problem. We will bring the evidence.",
+      body: "We turn the need into a testable question, scout globally against it, design the test with success criteria agreed in advance, and run it in the environment where it has to work.",
+    },
+    startup: {
+      eyebrow: "For startups",
+      title: "A real test, in a real environment, with a decision at the end",
+      body: "The offer is narrower: a partner with an operational need, a workshop that can build the test rig, and a written answer at the end.",
+    },
+    partnerAction: "Bring an operational need",
+    startupAction: "I have technology to test",
+  },
+} as const;
+
+export const homeSignalAnchors = [
+  { id: "hero-origin", order: 1, lane: "end" },
+  { id: "consortium-network", order: 2, lane: "center" },
+  { id: "evidence-criteria", order: 3, lane: "start" },
+  { id: "audience-choice", order: 4, lane: "end" },
+  { id: "workshop-alignment", order: 5, lane: "center" },
+  { id: "operational-need", order: 6, lane: "start" },
+  { id: "global-scouting", order: 7, lane: "end" },
+  { id: "partner-match", order: 8, lane: "center" },
+  { id: "field-poc", order: 9, lane: "start" },
+  { id: "scale-what-works", order: 10, lane: "end" },
+  { id: "representative-challenges", order: 11, lane: "start" },
+  { id: "focus-areas", order: 12, lane: "end" },
+  { id: "evidence-publication", order: 13, lane: "center" },
+  { id: "spark-next-step", order: 14, lane: "start" },
+  { id: "test-capability", order: 15, lane: "end" },
+  { id: "final-conversion", order: 16, lane: "center" },
+] as const;
+
+export const homeSceneContract = [
+  { id: "hero", order: 1, mode: "light", entryAnchor: "hero-origin", exitAnchor: "hero-origin", depthPx: 8 },
+  { id: "consortium", order: 2, mode: "full", entryAnchor: "consortium-network", exitAnchor: "evidence-criteria", internalAnchors: ["consortium-network", "evidence-criteria"], depthPx: 8 },
+  { id: "audience", order: 3, mode: "light", entryAnchor: "audience-choice", exitAnchor: "audience-choice", depthPx: 6 },
+  { id: "operating-model", order: 4, mode: "full", entryAnchor: "workshop-alignment", exitAnchor: "workshop-alignment", depthPx: 8 },
+  { id: "quantum-route", order: 5, mode: "full", entryAnchor: "operational-need", exitAnchor: "scale-what-works", internalAnchors: ["operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works"], depthPx: 12 },
+  { id: "representative-challenges", order: 6, mode: "static", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 0 },
+  { id: "focus-areas", order: 7, mode: "static", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 0 },
+  { id: "evidence-resolution", order: 8, mode: "static", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 0 },
+  { id: "spark-test-transition", order: 9, mode: "light", entryAnchor: "spark-next-step", exitAnchor: "test-capability", internalAnchors: ["spark-next-step", "test-capability"], depthPx: 8 },
+  { id: "final-conversion", order: 10, mode: "light", entryAnchor: "final-conversion", exitAnchor: "final-conversion", depthPx: 4 },
+] as const satisfies readonly HomeSceneContract[];
 
 export const signalSteps = processStages.map((stage) => ({
   number: String(stage.order).padStart(2, "0"),

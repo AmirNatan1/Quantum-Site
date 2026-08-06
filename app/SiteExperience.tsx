@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, ReactNode, useEffect, useState } from "react";
+import { KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 import {
   legalDetails,
   partners,
@@ -10,14 +10,18 @@ import {
   sparkStatus,
 } from "./data";
 import { AccentHeadingText } from "./components/brand/AccentHeadingText";
-import { ConsortiumMark } from "./components/brand/ConsortiumMark";
+import { AlignmentScene } from "./components/home/AlignmentScene";
 import { AudienceSelector } from "./components/home/AudienceSelector";
-import { ProcessStory } from "./components/home/ProcessStory";
 import { ClosingConversion } from "./components/home/ClosingConversion";
+import { ConsortiumChapter } from "./components/home/ConsortiumChapter";
+import { ProcessStory } from "./components/home/ProcessStory";
 import { NeedsBoard } from "./components/needs/NeedsBoard";
+import { SignalPath } from "./components/signal/SignalPath";
 import { SparkStatusPanel } from "./components/spark/SparkStatusPanel";
 import { LeadForm } from "./components/forms/LeadForm";
 import { useRevealFoundation } from "./hooks/useRevealFoundation";
+import { useQuantumSignalNarrative } from "./hooks/useQuantumSignalNarrative";
+import { emitScrollFrame } from "./lib/scroll-frame";
 
 type RouteProps = { route: string };
 
@@ -53,8 +57,8 @@ function Arrow() {
   return <span className="arrow-line" aria-hidden="true" />;
 }
 
-function TitleText({ text, reveal = false }: { text: string; reveal?: boolean }) {
-  return <AccentHeadingText text={text} reveal={reveal} />;
+function TitleText({ text, reveal = false, accentI = false }: { text: string; reveal?: boolean; accentI?: boolean }) {
+  return <AccentHeadingText text={text} reveal={reveal} accentI={accentI} />;
 }
 
 function Eyebrow({ children, inverse = false }: { children: ReactNode; inverse?: boolean }) {
@@ -205,39 +209,6 @@ function PageHero({
   );
 }
 
-function EvidenceBand() {
-  const tiles = [
-    ["Criteria first", "Pass conditions are defined per test scenario before testing begins."],
-    ["Real environments", "Testing can take place in industrial facilities and operating environments appropriate to the question."],
-    ["An answer either way", "Results that do not support a rollout are reported as clearly as results that do."],
-  ];
-  return (
-    <section className="metric-band qualitative-band" aria-labelledby="evidence-band-title">
-      <div className="shell">
-        <Eyebrow inverse>what a POC produces</Eyebrow>
-        <div className="qualitative-band-heading">
-          <h2 id="evidence-band-title">A written answer, against criteria agreed in advance</h2>
-          <p>Before anything is built, both sides write down what success looks like. The final report states objectives, setup, test plan, results per scenario, conclusions and recommendations.</p>
-        </div>
-        <div className="metric-grid qualitative-grid">
-          {tiles.map(([title, body], index) => <article key={title} data-reveal="block" style={{ "--reveal-index": index } as React.CSSProperties}><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PartnerStrip() {
-  return (
-    <section className="partner-strip" aria-label="Industrial partners">
-      <div className="shell partner-strip-inner">
-        <span className="partner-strip-label">Who is behind this</span>
-        {partners.map((partner) => <ConsortiumMark partner={partner} key={partner.id} />)}
-      </div>
-    </section>
-  );
-}
-
 function SectorSection({ full = false }: { full?: boolean }) {
   const [active, setActive] = useState(0);
   const selected = sectors[active];
@@ -258,7 +229,15 @@ function SectorSection({ full = false }: { full?: boolean }) {
   }
 
   return (
-    <section className="sector-section section-pad">
+    <section
+      className="sector-section section-pad"
+      data-scene-id="focus-areas"
+      data-scene-mode="static"
+      data-signal-anchor="focus-areas"
+      data-signal-order="12"
+      data-signal-lane="end"
+    >
+      <i className="scene-signal-port" data-signal-port aria-hidden="true" />
       <div className="shell">
         <SectionHeading eyebrow="focus areas" title="Four areas, and the space between them" />
         <div className="sector-interface" data-reveal="block">
@@ -297,7 +276,18 @@ function SectorSection({ full = false }: { full?: boolean }) {
 
 function EvidenceEmptyState({ compact = false }: { compact?: boolean }) {
   return (
-    <section className={`evidence-empty${compact ? " evidence-empty-compact" : ""}`} aria-labelledby={compact ? "home-evidence-title" : "evidence-empty-title"}>
+    <section
+      className={`evidence-empty${compact ? " evidence-empty-compact" : ""}`}
+      aria-labelledby={compact ? "home-evidence-title" : "evidence-empty-title"}
+      {...(compact ? {
+        "data-scene-id": "evidence-resolution",
+        "data-scene-mode": "static",
+        "data-signal-anchor": "evidence-publication",
+        "data-signal-order": "13",
+        "data-signal-lane": "center",
+      } : {})}
+    >
+      {compact ? <i className="scene-signal-port" data-signal-port aria-hidden="true" /> : null}
       <div className="shell" data-reveal="block">
         <Eyebrow>results</Eyebrow>
         <h2 id={compact ? "home-evidence-title" : "evidence-empty-title"}><TitleText text="Our case library is being prepared for publication" reveal /></h2>
@@ -336,7 +326,13 @@ function PlaygroundPanel() {
 
 function SparkBand() {
   return (
-    <section className="spark-band">
+    <section
+      className="spark-band"
+      data-signal-anchor="spark-next-step"
+      data-signal-order="14"
+      data-signal-lane="start"
+    >
+      <i className="scene-signal-port" data-signal-port aria-hidden="true" />
       <div className="shell spark-layout">
         <div data-reveal="block">
           <Eyebrow inverse>for startups</Eyebrow>
@@ -377,14 +373,26 @@ function CardGrid({ cards, columns = 3 }: { cards: string[][]; columns?: number 
 }
 
 function HomePage() {
+  const narrativeRef = useRef<HTMLDivElement>(null);
+  const { geometry } = useQuantumSignalNarrative(narrativeRef);
+
   return (
-    <>
-      <section className="home-hero">
-        <div className="hero-safe-visual" aria-hidden="true"><span /><span /><span /><i /></div>
+    <div className="home-narrative" ref={narrativeRef}>
+      <SignalPath geometry={geometry} />
+      <section
+        className="home-hero"
+        data-scene-id="hero"
+        data-scene-mode="light"
+        data-signal-anchor="hero-origin"
+        data-signal-order="1"
+        data-signal-lane="end"
+      >
+        <i className="scene-signal-port" data-signal-port aria-hidden="true" />
+        <div className="hero-safe-visual" data-scene-part="origin" data-scene-visual aria-hidden="true"><span /><span /><span /><i /></div>
         <div className="shell hero-grid">
           <div className="hero-copy" data-reveal="block">
             <Eyebrow>An industrial consortium</Eyebrow>
-            <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it where" /></span><span><TitleText text="it has to work" /></span></h1>
+            <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it where" accentI /></span><span><TitleText text="it has to work" accentI /></span></h1>
             <p>Quantum Hub connects operational needs inside major industrial groups with technology that is ready to be tested. We frame the need, find the technology, design the test, run it in the environment where it has to perform, and hand both sides evidence they can decide on.</p>
             <div className="hero-actions">
               <Action href="/contact?intent=challenge">Bring an operational need</Action>
@@ -394,31 +402,43 @@ function HomePage() {
         </div>
         <div className="hero-note shell"><span>Scroll to see the method</span><i /></div>
       </section>
-      <PartnerStrip />
-      <EvidenceBand />
+      <ConsortiumChapter />
       <AudienceSelector />
-      <section className="intro-section section-pad">
-        <div className="shell editorial-split">
-          <SectionHeading eyebrow="the model" title="We match technology to need — and we build the test ourselves" />
-          <div data-reveal="block"><p>We scout and match, and then do the engineering: fabricating mounts, routing wiring, integrating sensors, standing up an isolated test network and instrumenting a vehicle. The match is useful only if someone can build the test.</p><Action href="/about" secondary>About Quantum Hub</Action></div>
-        </div>
-      </section>
+      <AlignmentScene />
       <ProcessStory />
-      <NeedsBoard />
+      <div
+        className="narrative-anchor-wrapper"
+        data-scene-id="representative-challenges"
+        data-scene-mode="static"
+        data-signal-anchor="representative-challenges"
+        data-signal-order="11"
+        data-signal-lane="start"
+      >
+        <i className="scene-signal-port" data-signal-port aria-hidden="true" />
+        <NeedsBoard />
+      </div>
       <SectorSection />
       <EvidenceEmptyState compact />
-      <SparkBand />
-      <section className="playground-section section-pad">
-        <div className="shell playground-layout">
-          <div>
-            <SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and access to working sites" body="Our workshop builds mounts, wiring, power, integration and isolated test networks. The instrumented Kia EV6 provides a vehicle platform, and partner environments support tests that cannot be simulated." />
-            <Action href="/pocs" secondary>What we can test</Action>
+      <div className="spark-test-scene" data-scene-id="spark-test-transition" data-scene-mode="light" data-scene-visual>
+        <SparkBand />
+        <section
+          className="playground-section section-pad"
+          data-signal-anchor="test-capability"
+          data-signal-order="15"
+          data-signal-lane="end"
+        >
+          <i className="scene-signal-port" data-signal-port aria-hidden="true" />
+          <div className="shell playground-layout">
+            <div>
+              <SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and access to working sites" body="Our workshop builds mounts, wiring, power, integration and isolated test networks. The instrumented Kia EV6 provides a vehicle platform, and partner environments support tests that cannot be simulated." />
+              <Action href="/pocs" secondary>What we can test</Action>
+            </div>
+            <PlaygroundPanel />
           </div>
-          <PlaygroundPanel />
-        </div>
-      </section>
+        </section>
+      </div>
       <ClosingConversion />
-    </>
+    </div>
   );
 }
 
@@ -586,16 +606,39 @@ export default function SiteExperience({ route }: RouteProps) {
         const height = document.documentElement.scrollHeight - window.innerHeight;
         progress.style.transform = `scaleX(${height > 0 ? window.scrollY / height : 0})`;
       }
+      emitScrollFrame();
     };
     const scheduleScrollUpdate = () => {
       if (!frame) frame = window.requestAnimationFrame(updateScroll);
     };
     window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
     updateScroll();
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    let fontNavigationFrame = 0;
+    let cancelled = false;
+    const alignHashTarget = (hash: string) => {
+      document.getElementById(hash.slice(1))?.scrollIntoView();
+      emitScrollFrame();
+    };
+    const navigationFrame = window.requestAnimationFrame(() => {
+      const hash = window.location.hash;
+      if (hash) {
+        alignHashTarget(hash);
+        if ("fonts" in document) {
+          void document.fonts.ready.then(() => {
+            if (cancelled) return;
+            fontNavigationFrame = window.requestAnimationFrame(() => alignHashTarget(hash));
+          });
+        }
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+    });
     return () => {
+      cancelled = true;
       window.removeEventListener("scroll", scheduleScrollUpdate);
       window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(navigationFrame);
+      window.cancelAnimationFrame(fontNavigationFrame);
     };
   }, [route]);
 

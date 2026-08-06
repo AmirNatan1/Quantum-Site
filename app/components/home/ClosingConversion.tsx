@@ -1,13 +1,36 @@
 import Link from "next/link";
+import { homeNarrativeCopy } from "../../data";
+import { useAudiencePreference } from "../../hooks/useAudiencePreference";
+import { track } from "../../lib/analytics";
+import { AccessibleHeading } from "../brand/AccentHeadingText";
 
 export function ClosingConversion() {
+  const [audience] = useAudiencePreference();
+  const state = audience ?? "neutral";
+  const copy = homeNarrativeCopy.conversion[state];
+  const trackCta = (cta: "partner" | "startup") => {
+    track({ event: "cta_click", audience: state, cta, route: "/", placement: "final_conversion" });
+  };
+
   return (
-    <section className="closing-conversion">
-      <div className="shell">
-        <span>Two ways in</span>
-        <h2>Start with the need,<br />not the technology</h2>
-        <p>If you run an operation with a problem worth testing, or you have built something that needs to prove itself in the field, the conversation starts the same way.</p>
-        <div><Link href="/contact?intent=challenge">Bring an operational need</Link><Link href="/contact?intent=startup">I have technology to test</Link></div>
+    <section
+      className={`closing-conversion audience-${state}`}
+      data-audience={state}
+      data-scene-id="final-conversion"
+      data-scene-mode="light"
+      data-signal-anchor="final-conversion"
+      data-signal-order="16"
+      data-signal-lane="center"
+    >
+      <i className="scene-signal-port" data-signal-port aria-hidden="true" />
+      <div className="shell" data-scene-part="conversion" data-scene-visual>
+        <span>{copy.eyebrow}</span>
+        <AccessibleHeading as="h2" text={copy.title} reveal />
+        <p>{copy.body}</p>
+        <div>
+          <Link className={audience === "partner" ? "is-emphasized" : ""} href="/contact?intent=challenge" onClick={() => trackCta("partner")}>{homeNarrativeCopy.conversion.partnerAction}</Link>
+          <Link className={audience === "startup" ? "is-emphasized" : ""} href="/contact?intent=startup" onClick={() => trackCta("startup")}>{homeNarrativeCopy.conversion.startupAction}</Link>
+        </div>
       </div>
     </section>
   );

@@ -1,26 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { AudienceCta } from "../data";
+import { useCallback, useEffect, useState } from "react";
+import type { AudienceId } from "../data";
 
 const STORAGE_KEY = "quantum-hub-audience";
+const AUDIENCE_CHANGE_EVENT = "quantum-hub:audience-change";
 
-export function useAudiencePreference(defaultValue: AudienceCta["id"] = "partner") {
-  const [audience, setAudienceState] = useState<AudienceCta["id"]>(defaultValue);
+function isAudienceId(value: unknown): value is AudienceId {
+  return value === "partner" || value === "startup";
+}
+
+export function useAudiencePreference() {
+  const [audience, setAudienceState] = useState<AudienceId | null>(null);
 
   useEffect(() => {
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
     let frame = 0;
-    if (stored === "partner" || stored === "startup") {
-      frame = window.requestAnimationFrame(() => setAudienceState(stored));
+    const handleChange = (event: Event) => {
+      const value = (event as CustomEvent<AudienceId>).detail;
+      if (isAudienceId(value)) setAudienceState(value);
+    };
+
+    window.addEventListener(AUDIENCE_CHANGE_EVENT, handleChange);
+    try {
+      const stored = window.sessionStorage.getItem(STORAGE_KEY);
+      if (isAudienceId(stored)) {
+        frame = window.requestAnimationFrame(() => setAudienceState(stored));
+      }
+    } catch {
+      // The neutral state remains fully usable when storage is unavailable.
     }
-    return () => window.cancelAnimationFrame(frame);
+
+    return () => {
+      window.removeEventListener(AUDIENCE_CHANGE_EVENT, handleChange);
+      window.cancelAnimationFrame(frame);
+    };
   }, []);
 
-  const setAudience = (value: AudienceCta["id"]) => {
+  const setAudience = useCallback((value: AudienceId) => {
     setAudienceState(value);
-    window.sessionStorage.setItem(STORAGE_KEY, value);
-  };
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, value);
+    } catch {
+      // Persistence is optional; the current-page preference still applies.
+    }
+    window.dispatchEvent(new CustomEvent<AudienceId>(AUDIENCE_CHANGE_EVENT, { detail: value }));
+  }, []);
 
   return [audience, setAudience] as const;
 }

@@ -68,15 +68,20 @@ test("active typography and shared transition values resolve through tokens", as
 });
 
 test("reveal styling and runtime fail open", async () => {
-  const [styles, hook, headings, site] = await Promise.all([
+  const [styles, hook, headings, site, consortium, alignment, process, closing] = await Promise.all([
     read("../app/globals.css"),
     read("../app/hooks/useRevealFoundation.ts"),
     read("../app/components/brand/AccentHeadingText.tsx"),
     read("../app/SiteExperience.tsx"),
+    read("../app/components/home/ConsortiumChapter.tsx"),
+    read("../app/components/home/AlignmentScene.tsx"),
+    read("../app/components/home/ProcessStory.tsx"),
+    read("../app/components/home/ClosingConversion.tsx"),
   ]);
 
   assert.match(styles, /\[data-reveal="block"\]\[data-reveal-state="prepared"\]/);
   assert.match(styles, /\[data-heading-reveal\]\[data-reveal-state="prepared"\]/);
+  assert.match(styles, /overflow-clip-margin:\s*\.16em/);
   assert.doesNotMatch(styles, /\.js-ready\s+\[data-reveal/);
   assert.doesNotMatch(styles, /transition-duration\s*:\s*\.01ms/);
   assert.match(hook, /document\.fonts/);
@@ -88,8 +93,16 @@ test("reveal styling and runtime fail open", async () => {
   assert.match(headings, /className="title-word-inner"/);
   assert.match(headings, /className="sr-only"/);
   assert.match(headings, /aria-hidden="true"/);
-  assert.match(site, /"--reveal-index": index/);
-  assert.doesNotMatch(site, /index\s*\*\s*70/);
+  assert.match(headings, /accentI = false/);
+  assert.match(headings, /accentI && part === "i"/);
+  assert.doesNotMatch(headings, /text\s*===/);
+  assert.match(site, /text="Prove it where" accentI/);
+  assert.match(site, /text="it has to work" accentI/);
+  assert.match(alignment, /reveal accentI/);
+  assert.match(process, /reveal accentI/);
+  assert.doesNotMatch(`${consortium}\n${closing}`, /accentI/);
+  assert.match(`${site}\n${consortium}`, /"--reveal-index": index/);
+  assert.doesNotMatch(`${site}\n${consortium}`, /index\s*\*\s*70/);
 });
 
 test("dormant blocked components remain outside the active site entry", async () => {

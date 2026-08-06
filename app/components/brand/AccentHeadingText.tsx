@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 
-export function AccentHeadingText({ text, reveal = false }: { text: string; reveal?: boolean }) {
+export function AccentHeadingText({
+  text,
+  reveal = false,
+  accentI = false,
+}: {
+  text: string;
+  reveal?: boolean;
+  accentI?: boolean;
+}) {
   return (
     <>
       <span className="sr-only">{text}</span>
@@ -11,8 +19,8 @@ export function AccentHeadingText({ text, reveal = false }: { text: string; reve
           ) : (
             <span className="title-word" key={`${word}-${wordIndex}`}>
               <span className="title-word-inner">
-                {word.split(/(i)/g).map((part, partIndex) =>
-                  part === "i" ? (
+                {(accentI ? word.split(/(i)/g) : [word]).map((part, partIndex) =>
+                  accentI && part === "i" ? (
                     <span className="title-i" key={`${wordIndex}-${partIndex}`}>{part}</span>
                   ) : (
                     <span key={`${wordIndex}-${partIndex}`}>{part}</span>
@@ -33,16 +41,18 @@ export function AccessibleHeading({
   children,
   className,
   reveal,
+  accentI,
 }: {
   as: "h1" | "h2" | "h3";
   text: string;
   children?: ReactNode;
   className?: string;
   reveal?: boolean;
+  accentI?: boolean;
 }) {
   return (
     <Element aria-label={text} className={className}>
-      <AccentHeadingText text={text} reveal={reveal ?? Element === "h2"} />
+      <AccentHeadingText text={text} reveal={reveal ?? Element === "h2"} accentI={accentI} />
       {children}
     </Element>
   );

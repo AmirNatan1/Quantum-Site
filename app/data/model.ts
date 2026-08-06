@@ -59,13 +59,75 @@ export type AudienceCta = {
   preferenceKey: "quantum-hub-audience";
 };
 
+export type AudienceId = AudienceCta["id"];
+
+export type SignalLane = "start" | "center" | "end";
+
+export type HomeSignalAnchorId =
+  | "hero-origin"
+  | "consortium-network"
+  | "evidence-criteria"
+  | "audience-choice"
+  | "workshop-alignment"
+  | "operational-need"
+  | "global-scouting"
+  | "partner-match"
+  | "field-poc"
+  | "scale-what-works"
+  | "representative-challenges"
+  | "focus-areas"
+  | "evidence-publication"
+  | "spark-next-step"
+  | "test-capability"
+  | "final-conversion";
+
+export type HomeSceneMode = "full" | "light" | "static";
+
+export type HomeSceneId =
+  | "hero"
+  | "consortium"
+  | "audience"
+  | "operating-model"
+  | "quantum-route"
+  | "representative-challenges"
+  | "focus-areas"
+  | "evidence-resolution"
+  | "spark-test-transition"
+  | "final-conversion";
+
+export type HomeSceneContract = {
+  id: HomeSceneId;
+  order: number;
+  mode: HomeSceneMode;
+  entryAnchor: HomeSignalAnchorId;
+  exitAnchor: HomeSignalAnchorId;
+  internalAnchors?: readonly HomeSignalAnchorId[];
+  depthPx: number;
+};
+
+export type ProcessDiagram =
+  | "constraints"
+  | "scouting"
+  | "alignment"
+  | "evidence"
+  | "resolution";
+
 export type ProcessStage = {
-  id: string;
+  id:
+    | "operational-need"
+    | "global-scouting"
+    | "partner-match"
+    | "field-poc"
+    | "scale-what-works";
   order: number;
   title: string;
   shortLabel: string;
   description: string;
+  supportingText?: string;
   state: EvidenceState;
+  diagram: ProcessDiagram;
+  diagramLabels: readonly string[];
+  resolutionLabels?: readonly [string, string, string];
   cta?: Cta;
 };
 
