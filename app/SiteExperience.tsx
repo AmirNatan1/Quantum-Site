@@ -17,6 +17,7 @@ import { ClosingConversion } from "./components/home/ClosingConversion";
 import { NeedsBoard } from "./components/needs/NeedsBoard";
 import { SparkStatusPanel } from "./components/spark/SparkStatusPanel";
 import { LeadForm } from "./components/forms/LeadForm";
+import { useRevealFoundation } from "./hooks/useRevealFoundation";
 
 type RouteProps = { route: string };
 
@@ -52,8 +53,8 @@ function Arrow() {
   return <span className="arrow-line" aria-hidden="true" />;
 }
 
-function TitleText({ text }: { text: string }) {
-  return <AccentHeadingText text={text} />;
+function TitleText({ text, reveal = false }: { text: string; reveal?: boolean }) {
+  return <AccentHeadingText text={text} reveal={reveal} />;
 }
 
 function Eyebrow({ children, inverse = false }: { children: ReactNode; inverse?: boolean }) {
@@ -101,9 +102,9 @@ function SectionHeading({
   align?: "left" | "center";
 }) {
   return (
-    <div className={`section-heading section-heading-${align}${inverse ? " inverse" : ""}`} data-reveal>
+    <div className={`section-heading section-heading-${align}${inverse ? " inverse" : ""}`} data-reveal="block">
       <Eyebrow inverse={inverse}>{eyebrow}</Eyebrow>
-      <h2><TitleText text={title} /></h2>
+      <h2><TitleText text={title} reveal /></h2>
       {body ? <p>{body}</p> : null}
     </div>
   );
@@ -194,7 +195,7 @@ function PageHero({
   return (
     <section className="page-hero">
       <div className="page-orbit" aria-hidden="true">{orbitDot ? <span /> : null}</div>
-      <div className="shell page-hero-inner" data-reveal>
+      <div className="shell page-hero-inner" data-reveal="block">
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1><TitleText text={title} /></h1>
         <p>{body}</p>
@@ -219,7 +220,7 @@ function EvidenceBand() {
           <p>Before anything is built, both sides write down what success looks like. The final report states objectives, setup, test plan, results per scenario, conclusions and recommendations.</p>
         </div>
         <div className="metric-grid qualitative-grid">
-          {tiles.map(([title, body], index) => <article key={title} data-reveal style={{ "--reveal-delay": `${index * 70}ms` } as React.CSSProperties}><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}
+          {tiles.map(([title, body], index) => <article key={title} data-reveal="block" style={{ "--reveal-index": index } as React.CSSProperties}><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}
         </div>
       </div>
     </section>
@@ -245,7 +246,7 @@ function SectorSection({ full = false }: { full?: boolean }) {
       <section className="sector-longform section-pad">
         <div className="shell">
           {sectors.map((sector) => (
-            <article id={sector.key} className="sector-row" key={sector.key} data-reveal>
+            <article id={sector.key} className="sector-row" key={sector.key} data-reveal="block">
               <span>{sector.number}</span>
               <div><Eyebrow>focus area</Eyebrow><h2><TitleText text={sector.title} /></h2></div>
               <div><p>{sector.summary}</p></div>
@@ -260,7 +261,7 @@ function SectorSection({ full = false }: { full?: boolean }) {
     <section className="sector-section section-pad">
       <div className="shell">
         <SectionHeading eyebrow="focus areas" title="Four areas, and the space between them" />
-        <div className="sector-interface" data-reveal>
+        <div className="sector-interface" data-reveal="block">
           <div className="sector-tabs" role="tablist" aria-label="Industries">
             {sectors.map((sector, index) => (
               <button
@@ -297,9 +298,9 @@ function SectorSection({ full = false }: { full?: boolean }) {
 function EvidenceEmptyState({ compact = false }: { compact?: boolean }) {
   return (
     <section className={`evidence-empty${compact ? " evidence-empty-compact" : ""}`} aria-labelledby={compact ? "home-evidence-title" : "evidence-empty-title"}>
-      <div className="shell" data-reveal>
+      <div className="shell" data-reveal="block">
         <Eyebrow>results</Eyebrow>
-        <h2 id={compact ? "home-evidence-title" : "evidence-empty-title"}>Our case library is being prepared for publication</h2>
+        <h2 id={compact ? "home-evidence-title" : "evidence-empty-title"}><TitleText text="Our case library is being prepared for publication" reveal /></h2>
         <p>Each case is reviewed with the startup and the partner before we publish it. In the meantime, the method behind them is documented in full.</p>
         <Action href="/pocs" secondary>See how a POC is designed</Action>
       </div>
@@ -337,11 +338,11 @@ function SparkBand() {
   return (
     <section className="spark-band">
       <div className="shell spark-layout">
-        <div data-reveal>
+        <div data-reveal="block">
           <Eyebrow inverse>for startups</Eyebrow>
-          <h2><TitleText text="SPARK: a POC runway with a partner who wants the answer" /></h2>
+          <h2><TitleText text="SPARK: a POC runway with a partner who wants the answer" reveal /></h2>
         </div>
-        <div data-reveal>
+        <div data-reveal="block">
           <p>SPARK is a thirteen-week programme for MVP+ startups. It is equity-free and there is no participation fee. Application dates are not currently published.</p>
           <Action href="/spark" inverse>How SPARK works</Action>
         </div>
@@ -354,9 +355,9 @@ function SparkBand() {
 function ClosingCTA({ title = "Bring the question", href = "/contact", label = "Start a conversation" }: { title?: string; href?: string; label?: string }) {
   return (
     <section className="closing-cta">
-      <div className="shell closing-inner" data-reveal>
+      <div className="shell closing-inner" data-reveal="block">
         <Eyebrow>start with one need</Eyebrow>
-        <h2><TitleText text={title} /></h2>
+        <h2><TitleText text={title} reveal /></h2>
         <Action href={href}>{label}</Action>
       </div>
     </section>
@@ -367,7 +368,7 @@ function CardGrid({ cards, columns = 3 }: { cards: string[][]; columns?: number 
   return (
     <div className={`plain-grid plain-grid-${columns}`}>
       {cards.map(([title, body], index) => (
-        <article className="plain-card" key={title} data-reveal>
+        <article className="plain-card" key={title} data-reveal="block">
           <span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p>
         </article>
       ))}
@@ -381,7 +382,7 @@ function HomePage() {
       <section className="home-hero">
         <div className="hero-safe-visual" aria-hidden="true"><span /><span /><span /><i /></div>
         <div className="shell hero-grid">
-          <div className="hero-copy" data-reveal>
+          <div className="hero-copy" data-reveal="block">
             <Eyebrow>An industrial consortium</Eyebrow>
             <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it where" /></span><span><TitleText text="it has to work" /></span></h1>
             <p>Quantum Hub connects operational needs inside major industrial groups with technology that is ready to be tested. We frame the need, find the technology, design the test, run it in the environment where it has to perform, and hand both sides evidence they can decide on.</p>
@@ -399,7 +400,7 @@ function HomePage() {
       <section className="intro-section section-pad">
         <div className="shell editorial-split">
           <SectionHeading eyebrow="the model" title="We match technology to need — and we build the test ourselves" />
-          <div data-reveal><p>We scout and match, and then do the engineering: fabricating mounts, routing wiring, integrating sensors, standing up an isolated test network and instrumenting a vehicle. The match is useful only if someone can build the test.</p><Action href="/about" secondary>About Quantum Hub</Action></div>
+          <div data-reveal="block"><p>We scout and match, and then do the engineering: fabricating mounts, routing wiring, integrating sensors, standing up an isolated test network and instrumenting a vehicle. The match is useful only if someone can build the test.</p><Action href="/about" secondary>About Quantum Hub</Action></div>
         </div>
       </section>
       <ProcessStory />
@@ -426,8 +427,8 @@ function AboutPage() {
     <>
       <PageHero eyebrow="about" title="Owned by industry, built to test" body="Quantum Hub is wholly owned by the Taavura-Livnat Group and operates as a shared platform for a group of industrial partners. That structure is why technology can be tested in a working environment rather than a demonstration." />
       <section className="partner-detail-section section-pad"><div className="shell"><SectionHeading eyebrow="the consortium" title="The partners" body="Partner names and roles are shown without logos, scale figures or tier labels." /><div className="partner-accordion">{partners.map((partner) => <details key={partner.name}><summary><span>{partner.short}</span><b>{partner.name}</b><i /></summary><div><p>{partner.description}</p></div></details>)}</div></div></section>
-      <section className="section-pad subtle-section"><div className="shell editorial-split"><SectionHeading eyebrow="selection" title="How we decide what to work on" /><p data-reveal>Technologies reach Quantum Hub through scouting, partner referral and programmes. They pass an initial review, technical diligence, and assessment by the partner business unit that would host the test. A technology with no internal owner on the partner side does not proceed.</p></div></section>
-      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="company details" title={legalDetails.entityName} /><p data-reveal>Company number {legalDetails.companyNumber}<br />{legalDetails.registeredAddress}</p></div></section>
+      <section className="section-pad subtle-section"><div className="shell editorial-split"><SectionHeading eyebrow="selection" title="How we decide what to work on" /><p data-reveal="block">Technologies reach Quantum Hub through scouting, partner referral and programmes. They pass an initial review, technical diligence, and assessment by the partner business unit that would host the test. A technology with no internal owner on the partner side does not proceed.</p></div></section>
+      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="company details" title={legalDetails.entityName} /><p data-reveal="block">Company number {legalDetails.companyNumber}<br />{legalDetails.registeredAddress}</p></div></section>
       <ClosingCTA title="Start with one question worth answering" />
     </>
   );
@@ -444,7 +445,7 @@ function PartnersPage() {
       <PageHero eyebrow="for industry" title="Bring the problem. We will bring the evidence." body="Most operational problems that survive internal effort survive because nobody has framed them precisely enough to test. We turn the need into a testable question, scout globally against it, design the test with success criteria agreed in advance, and run it in the environment where it has to work." actions={<Action href="/contact?intent=challenge">Frame a challenge with us</Action>} />
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="method" title="Framing first, scouting second" /><CardGrid cards={cards} /></div></section>
       <section className="section-pad subtle-section"><div className="shell"><SectionHeading eyebrow="your side" title="What a partner provides" /><CardGrid cards={[["A named internal owner", "Someone inside the organisation with the authority and time to pursue the answer."], ["Access to the environment", "The site, line, vehicle or facility where the technology has to perform."], ["A route through safety and access", "Site induction, permits, systems and data access scoped to the test."]]} /></div></section>
-      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="the deliverable" title="A written report against criteria set at the start" /><p data-reveal>Every test scenario carries a stated pass condition agreed before testing. The report covers objectives, setup, test plan, results per scenario, conclusions and recommendations, whichever way the results fall.</p></div></section>
+      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="the deliverable" title="A written report against criteria set at the start" /><p data-reveal="block">Every test scenario carries a stated pass condition agreed before testing. The report covers objectives, setup, test plan, results per scenario, conclusions and recommendations, whichever way the results fall.</p></div></section>
       <ClosingCTA title="Start with one need" href="/contact?intent=challenge" label="Frame a challenge with us" />
     </>
   );
@@ -455,7 +456,7 @@ function StartupsPage() {
     <>
       <PageHero eyebrow="for startups" title="A real test, in a real environment, with a decision at the end" body="Quantum Hub is not an accelerator and does not invest as a condition of taking part. The offer is narrower: a partner with an operational need, a workshop that can build the test rig, and a written answer at the end." actions={<Action href="/spark">How SPARK works</Action>} />
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="readiness" title="You are ready if" /><CardGrid cards={sparkStatus.eligibility.map((item, index) => [`0${index + 1}`, item])} columns={4} /></div></section>
-      <section className="section-pad subtle-section"><div className="shell editorial-split"><SectionHeading eyebrow="selection" title="The bar is a partner who wants the answer" /><p data-reveal>{sparkStatus.selectionCriteria}</p></div></section>
+      <section className="section-pad subtle-section"><div className="shell editorial-split"><SectionHeading eyebrow="selection" title="The bar is a partner who wants the answer" /><p data-reveal="block">{sparkStatus.selectionCriteria}</p></div></section>
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="commercials" title="Equity-free, no participation fee" body="Each party keeps its own intellectual property. We are confirming how POC costs are allocated between Quantum Hub, the partner and the startup. Ask us and we will tell you what applies to your case." /><CardGrid cards={[["Programme", sparkStatus.duration], ["Participation", sparkStatus.participationFee], ["Equity", sparkStatus.equity]]} /></div></section>
       <section className="section-pad"><div className="shell"><SparkStatusPanel /></div></section>
       <ClosingCTA title="Tell us what you have built and where it works" href="/contact?intent=startup" label="Start a conversation" />
@@ -482,7 +483,7 @@ function SparkPage() {
     <>
       <PageHero eyebrow="spark" title="A POC runway with a partner who wants the answer" body="SPARK is a thirteen-week POC runway programme for MVP+ startups. It is equity-free and there is no participation fee." orbitDot={false} />
       <section className="section-pad"><div className="shell"><SparkStatusPanel /></div></section>
-      <section className="spark-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="programme route" title="From screening to a decision" /><div className="vertical-steps">{stages.map(([title, body], index) => <article key={title} data-reveal><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></article>)}</div></div></section>
+      <section className="spark-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="programme route" title="From screening to a decision" /><div className="vertical-steps">{stages.map(([title, body], index) => <article key={title} data-reveal="block"><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></article>)}</div></div></section>
       <section className="faq-section section-pad"><div className="shell faq-layout"><SectionHeading eyebrow="frequently asked" title="Before you take part" /><div>{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<i /></summary><p>{answer}</p></details>)}</div></div></section>
       <ClosingCTA title="Tell us what you have built and where it works" href="/contact?intent=startup" label="Start a conversation" />
     </>
@@ -512,7 +513,7 @@ function PocsPage() {
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="the method" title="One unknown at a time" /><CardGrid cards={method} columns={4} /></div></section>
       <NeedsBoard />
       <section className="playground-section section-pad subtle-section"><div className="shell playground-layout"><div><SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and working sites" body="The workshop supports integration and bench mockups. An instrumented Kia EV6 provides a vehicle platform. Partner environments support tests that cannot be simulated." /><Action href="/case-studies" secondary>Evidence publication standard</Action></div><PlaygroundPanel /></div></section>
-      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="reporting" title="One report format, whatever the result" /><p data-reveal>Executive summary, objectives, setup, test plan, results per scenario, conclusions and recommendations. Results are stated against the criteria fixed before testing.</p></div></section>
+      <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="reporting" title="One report format, whatever the result" /><p data-reveal="block">Executive summary, objectives, setup, test plan, results per scenario, conclusions and recommendations. Results are stated against the criteria fixed before testing.</p></div></section>
       <ClosingCTA title="Bring the question" />
     </>
   );
@@ -541,7 +542,7 @@ function ContactPage() {
   return (
     <>
       <PageHero eyebrow="get in touch" title="Start with the need" body="Tell us what you are trying to find out. The more specific the question, the faster we can tell you whether Quantum Hub can help." />
-      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>contact details</Eyebrow><h2><TitleText text="A public form is not available" /></h2><p>{publicContact.address}</p><a href={publicContact.linkedin} target="_blank" rel="noreferrer">Quantum Hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal><LeadForm kind="contact" /></div></div></section>
+      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal="block"><Eyebrow>contact details</Eyebrow><h2><TitleText text="A public form is not available" /></h2><p>{publicContact.address}</p><a href={publicContact.linkedin} target="_blank" rel="noreferrer">Quantum Hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal="block"><LeadForm kind="contact" /></div></div></section>
     </>
   );
 }
@@ -550,7 +551,7 @@ function SparkRegisterPage() {
   return (
     <>
       <PageHero eyebrow="spark application status" title="Applications are not open right now" body="No current cohort window, application URL or approved privacy wording is available for publication." />
-      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal><Eyebrow>field readiness</Eyebrow><h2><TitleText text="No submission route is active" /></h2><p>When an application route is approved, the SPARK page will state the dates and requirements explicitly.</p></div><div className="form-card" data-reveal><LeadForm kind="spark-register" /></div></div></section>
+      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal="block"><Eyebrow>field readiness</Eyebrow><h2><TitleText text="No submission route is active" /></h2><p>When an application route is approved, the SPARK page will state the dates and requirements explicitly.</p></div><div className="form-card" data-reveal="block"><LeadForm kind="spark-register" /></div></div></section>
     </>
   );
 }
@@ -571,6 +572,8 @@ function RoutePage({ route }: RouteProps) {
 }
 
 export default function SiteExperience({ route }: RouteProps) {
+  useRevealFoundation(route);
+
   useEffect(() => {
     document.documentElement.classList.add("js-ready");
     const header = document.querySelector<HTMLElement>("[data-site-header]");
@@ -587,21 +590,10 @@ export default function SiteExperience({ route }: RouteProps) {
     const scheduleScrollUpdate = () => {
       if (!frame) frame = window.requestAnimationFrame(updateScroll);
     };
-    const reveals = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          (entry.target as HTMLElement).classList.add("is-visible");
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    reveals.forEach((element) => revealObserver.observe(element));
     window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
     updateScroll();
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     return () => {
-      revealObserver.disconnect();
       window.removeEventListener("scroll", scheduleScrollUpdate);
       window.cancelAnimationFrame(frame);
     };
