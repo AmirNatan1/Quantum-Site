@@ -44,6 +44,20 @@ test("fresh public output exposes no named-evidence or unpublished-program surfa
   ]) assert.doesNotMatch(output, pattern, pattern.source);
 });
 
+test("fresh public output contains no dormant scoring or simulated result surface", async () => {
+  const output = await readPublicOutput();
+  for (const pattern of [
+    /Strong candidate for partner scoping/i,
+    /Promising, with gaps to resolve before a POC/i,
+    /More discovery is needed before a field test/i,
+    /Illustrative match/i,
+    /class=["'][^"']*match-result/i,
+    />\s*\/100\s*</i,
+    /data-(?:partner|site|recommendation)=/i,
+  ]) assert.doesNotMatch(output, pattern, pattern.source);
+  assert.match(output, /Illustrative operating model — not a live match\./i);
+});
+
 test("fresh public output excludes blocked metrics and unapproved asset references", async () => {
   const output = await readPublicOutput();
   for (const pattern of [

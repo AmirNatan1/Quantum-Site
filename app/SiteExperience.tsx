@@ -15,6 +15,7 @@ import { AudienceSelector } from "./components/home/AudienceSelector";
 import { ClosingConversion } from "./components/home/ClosingConversion";
 import { ConsortiumChapter } from "./components/home/ConsortiumChapter";
 import { ProcessStory } from "./components/home/ProcessStory";
+import { ChallengeDecisionInstrument } from "./components/needs/ChallengeDecisionInstrument";
 import { NeedsBoard } from "./components/needs/NeedsBoard";
 import { SignalPath } from "./components/signal/SignalPath";
 import { SparkStatusPanel } from "./components/spark/SparkStatusPanel";
@@ -415,7 +416,7 @@ function HomePage() {
         data-signal-lane="start"
       >
         <i className="scene-signal-port" data-signal-port aria-hidden="true" />
-        <NeedsBoard />
+        <ChallengeDecisionInstrument />
       </div>
       <SectorSection />
       <EvidenceEmptyState compact />

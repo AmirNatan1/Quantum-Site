@@ -1,10 +1,79 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const anchorIds = [
   "hero-origin", "consortium-network", "evidence-criteria", "audience-choice", "workshop-alignment",
   "operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works",
   "representative-challenges", "focus-areas", "evidence-publication", "spark-next-step", "test-capability", "final-conversion",
 ];
+
+const focusAreaViewports = [
+  { width: 1440, height: 900 },
+  { width: 1100, height: 700 },
+  { width: 890, height: 700 },
+  { width: 390, height: 844 },
+  { width: 360, height: 800 },
+  { width: 320, height: 800 },
+] as const;
+
+async function expectFocusAreaNodeClear(page: Page, context: string) {
+  const geometry = await page.locator('[data-scene-id="focus-areas"]').evaluate(async (scene) => {
+    const tabs = Array.from(scene.querySelectorAll<HTMLButtonElement>(".sector-tabs [role=tab]"));
+    const results = [];
+    for (const tab of tabs) {
+      tab.click();
+      await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      const node = scene.querySelector(".sector-radar span:nth-child(3)")?.getBoundingClientRect();
+      const labels = Array.from(scene.querySelectorAll(".sector-display-copy h3 .title-word"), (word) => word.getBoundingClientRect());
+      if (!node) return null;
+      const clearance = 8;
+      results.push({
+        selected: tab.getAttribute("aria-selected") === "true",
+        overlap: labels.some((label) => (
+          node.left - clearance < label.right
+          && node.right + clearance > label.left
+          && node.top - clearance < label.bottom
+          && node.bottom + clearance > label.top
+        )),
+      });
+    }
+    return {
+      results,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  expect(geometry, `${context} geometry`).not.toBeNull();
+  expect(geometry?.results).toHaveLength(4);
+  expect(geometry?.results.every(({ selected }) => selected), `${context} selected state`).toBe(true);
+  expect(geometry?.results.some(({ overlap }) => overlap), `${context} node clearance`).toBe(false);
+  expect(geometry?.overflow, `${context} overflow`).toBeLessThanOrEqual(1);
+}
+
+test("focus-area radar node stays clear of every sector label", async ({ page }) => {
+  test.slow();
+  for (const viewport of focusAreaViewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    const scene = page.locator('[data-scene-id="focus-areas"]');
+    const interfacePanel = scene.locator(".sector-interface");
+
+    await expect(interfacePanel).toHaveAttribute("data-reveal-state", "prepared");
+    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} prepared`);
+
+    await scene.scrollIntoViewIfNeeded();
+    await expect(interfacePanel).toHaveAttribute("data-reveal-state", "visible");
+    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} progressing`);
+    await page.waitForTimeout(700);
+    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} resolved`);
+
+    await page.evaluate(() => {
+      scrollTo({ top: 0, behavior: "auto" });
+      dispatchEvent(new Event("quantum-hub:scroll-frame"));
+    });
+    await page.evaluate(() => new Promise<number>((resolve) => requestAnimationFrame(resolve)));
+    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} reverse`);
+  }
+});
 
 test("continuous signal follows the complete ordered contract and regenerates on reflow", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });

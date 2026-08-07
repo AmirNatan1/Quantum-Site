@@ -45,14 +45,29 @@ test("server-renders the publication-safe Quantum Hub homepage", async () => {
   assert.match(html, /Prove it where it has to work/i);
   assert.match(html, /hero-safe-visual/);
   assert.match(html, /A written answer, against criteria agreed in advance/i);
-  assert.match(html, /Representative — not an open call/i);
+  assert.match(html, /Representative challenge:/i);
+  assert.match(html, /data-challenge-instrument/i);
+  assert.match(html, /data-challenge-static-fallback/i);
+  assert.match(html, /Choose a representative challenge to review\./i);
+  assert.match(html, /Review the decision frame/i);
+  assert.match(html, /Illustrative operating model — not a live match\./i);
   assert.match(html, /Our case library is being prepared for publication/i);
   assert.doesNotMatch(html, /<video\b|hero-quantum-hub|og-signal/i);
-  assert.doesNotMatch(html, /<form\b/i);
+  assert.doesNotMatch(html, /<textarea\b|<input[^>]+type="(?:text|email|tel|file)"/i);
   assert.doesNotMatch(html, /<link rel="canonical"|property="og:image"/i);
   assert.match(html, /aria-label="Primary navigation"/);
   assert.match(html, /href="#main-content"[^>]*>Skip to main content/);
   assert.match(html, /id="signal-story"/);
+});
+
+test("homepage instrument does not replace the POC challenge catalogue", async () => {
+  const home = await (await render("/")).text();
+  const pocs = await (await render("/pocs")).text();
+  assert.match(home, /data-challenge-instrument/i);
+  assert.doesNotMatch(pocs, /data-challenge-instrument/i);
+  assert.match(pocs, /class="needs-grid"/i);
+  assert.match(pocs, /Filter representative challenges/i);
+  assert.match(pocs, /These categories describe the kind of work we do\./i);
 });
 
 test("partner presentation is names-only", async () => {

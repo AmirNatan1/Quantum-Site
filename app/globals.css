@@ -384,7 +384,7 @@ main:focus { outline: none; }
 .sector-tabs button.is-active { padding-left: 30px; background: var(--ink-50); color: var(--ink-900); }
 .sector-tabs button.is-active span { color: var(--magenta-600); }
 .sector-display { position: relative; min-height: 470px; padding: 58px; display: flex; align-items: flex-end; overflow: hidden; }
-.sector-radar { position: absolute; right: -50px; top: -80px; width: 420px; height: 420px; border: 1px solid var(--ink-100); border-radius: 50%; }
+.sector-radar { position: absolute; right: -80px; top: -80px; width: 420px; height: 420px; border: 1px solid var(--ink-100); border-radius: 50%; }
 .sector-radar span { position: absolute; border: 1px solid var(--ink-100); border-radius: 50%; }
 .sector-radar span:nth-child(1) { inset: 15%; }
 .sector-radar span:nth-child(2) { inset: 31%; }
