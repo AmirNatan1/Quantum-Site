@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 import {
+  homeNarrativeCopy,
   legalDetails,
   partners,
+  processStages,
   publicContact,
   sectors,
+  sparkRouteContent,
   sparkStatus,
 } from "./data";
 import { AccentHeadingText } from "./components/brand/AccentHeadingText";
@@ -19,12 +22,26 @@ import { ChallengeDecisionInstrument } from "./components/needs/ChallengeDecisio
 import { NeedsBoard } from "./components/needs/NeedsBoard";
 import { SignalPath } from "./components/signal/SignalPath";
 import { SparkStatusPanel } from "./components/spark/SparkStatusPanel";
-import { LeadForm } from "./components/forms/LeadForm";
+import { ClosedSubmissionState } from "./components/forms/ClosedSubmissionState";
 import { useRevealFoundation } from "./hooks/useRevealFoundation";
 import { useQuantumSignalNarrative } from "./hooks/useQuantumSignalNarrative";
 import { emitScrollFrame } from "./lib/scroll-frame";
 
 type RouteProps = { route: string };
+
+const noScriptStyles = `
+  .scroll-progress,.need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"],.audience-selector input{display:none!important}
+  .sector-interface{margin:0!important;border:0!important;display:block!important}
+  .audience-selector label{cursor:default!important}
+  @media(max-width:860px){
+    .site-header{position:static!important;height:auto!important;background:#fff!important;border-color:#e7ebec!important}
+    .header-inner{min-height:68px;height:auto!important;flex-wrap:wrap}
+    .menu-toggle{display:none!important}
+    .site-nav{position:static!important;inset:auto!important;width:100%!important;padding:0 0 16px!important;background:#fff!important;display:flex!important;flex-flow:row wrap!important;align-items:center!important;gap:4px!important;opacity:1!important;visibility:visible!important;transform:none!important}
+    .site-nav>a,.site-header.is-over-dark:not(.is-scrolled):not(.is-menu-open) .site-nav>a:not(.nav-spark){width:auto!important;min-height:44px!important;padding:8px 10px!important;border:1px solid #d3d8da!important;border-radius:4px!important;background:#fff!important;color:#2a2e30!important;font:700 .75rem/1.2 Manrope,Arial,sans-serif!important}
+    .site-nav .nav-spark{margin:0!important}
+  }
+`;
 
 const navItems = [
   ["For Industry", "/for-partners"],
@@ -91,6 +108,10 @@ function Action({
       <Arrow />
     </Link>
   );
+}
+
+function NoScriptExperienceStyles() {
+  return <noscript><style>{noScriptStyles}</style></noscript>;
 }
 
 function SectionHeading({
@@ -270,6 +291,18 @@ function SectorSection({ full = false }: { full?: boolean }) {
             </div>
           </div>
         </div>
+        <noscript>
+          <div className="plain-grid plain-grid-4 sector-static-fallback">
+            {sectors.map((sector) => (
+              <article className="plain-card" key={sector.key}>
+                <span>{sector.number}</span>
+                <h3>{sector.title}</h3>
+                <p>{sector.summary}</p>
+                <Action href={`/industries#${sector.key}`} secondary>Explore this focus area</Action>
+              </article>
+            ))}
+          </div>
+        </noscript>
       </div>
     </section>
   );
@@ -321,6 +354,13 @@ function PlaygroundPanel() {
         ))}
       </div>
       <p id="playground-readout" className="sr-only" role="tabpanel" aria-labelledby={`playground-tab-${mode}`}>{modes[mode].join(", ")}</p>
+      <noscript>
+        <div className="playground-controls playground-static-controls" aria-label="POC capability examples">
+          {modes.map((item) => (
+            <article key={item[0]}><span>{item[0]}</span><b>{item[1]}</b><small>{item[2]}</small></article>
+          ))}
+        </div>
+      </noscript>
     </div>
   );
 }
@@ -349,21 +389,24 @@ function SparkBand() {
   );
 }
 
-function ClosingCTA({ title = "Bring the question", href = "/contact", label = "Start a conversation" }: { title?: string; href?: string; label?: string }) {
+function ClosingCTA({ title = "Bring the question", href = "/contact", label = "Start a conversation", links }: { title?: string; href?: string; label?: string; links?: readonly (readonly [string, string])[] }) {
+  const actions = links ?? [[label, href]];
   return (
     <section className="closing-cta">
       <div className="shell closing-inner" data-reveal="block">
         <Eyebrow>start with one need</Eyebrow>
         <h2><TitleText text={title} reveal /></h2>
-        <Action href={href}>{label}</Action>
+        <div className="closing-actions">
+          {actions.map(([actionLabel, actionHref]) => <Action href={actionHref} key={actionHref}>{actionLabel}</Action>)}
+        </div>
       </div>
     </section>
   );
 }
 
-function CardGrid({ cards, columns = 3 }: { cards: string[][]; columns?: number }) {
+function CardGrid({ cards, columns = 3, compact = false }: { cards: readonly (readonly string[])[]; columns?: number; compact?: boolean }) {
   return (
-    <div className={`plain-grid plain-grid-${columns}`}>
+    <div className={`plain-grid plain-grid-${columns}${compact ? " plain-grid-compact" : ""}`}>
       {cards.map(([title, body], index) => (
         <article className="plain-card" key={title} data-reveal="block">
           <span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p>
@@ -396,7 +439,7 @@ function HomePage() {
             <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it where" accentI /></span><span><TitleText text="it has to work" accentI /></span></h1>
             <p>Quantum Hub connects operational needs inside major industrial groups with technology that is ready to be tested. We frame the need, find the technology, design the test, run it in the environment where it has to perform, and hand both sides evidence they can decide on.</p>
             <div className="hero-actions">
-              <Action href="/contact?intent=challenge">Bring an operational need</Action>
+              <Action href="/for-partners">Bring an operational need</Action>
               <Action href="/for-startups" secondary inverse>I have technology to test</Action>
             </div>
           </div>
@@ -463,11 +506,11 @@ function PartnersPage() {
   ];
   return (
     <>
-      <PageHero eyebrow="for industry" title="Bring the problem. We will bring the evidence." body="Most operational problems that survive internal effort survive because nobody has framed them precisely enough to test. We turn the need into a testable question, scout globally against it, design the test with success criteria agreed in advance, and run it in the environment where it has to work." actions={<Action href="/contact?intent=challenge">Frame a challenge with us</Action>} />
+      <PageHero eyebrow="for industry" title="Bring the problem. We will bring the evidence." body="Most operational problems that survive internal effort survive because nobody has framed them precisely enough to test. We turn the need into a testable question, scout globally against it, design the test with success criteria agreed in advance, and run it in the environment where it has to work." actions={<Action href="/contact">Frame a challenge with us</Action>} />
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="method" title="Framing first, scouting second" /><CardGrid cards={cards} /></div></section>
       <section className="section-pad subtle-section"><div className="shell"><SectionHeading eyebrow="your side" title="What a partner provides" /><CardGrid cards={[["A named internal owner", "Someone inside the organisation with the authority and time to pursue the answer."], ["Access to the environment", "The site, line, vehicle or facility where the technology has to perform."], ["A route through safety and access", "Site induction, permits, systems and data access scoped to the test."]]} /></div></section>
       <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="the deliverable" title="A written report against criteria set at the start" /><p data-reveal="block">Every test scenario carries a stated pass condition agreed before testing. The report covers objectives, setup, test plan, results per scenario, conclusions and recommendations, whichever way the results fall.</p></div></section>
-      <ClosingCTA title="Start with one need" href="/contact?intent=challenge" label="Frame a challenge with us" />
+      <ClosingCTA title="Start with one need" href="/contact" label="Frame a challenge with us" />
     </>
   );
 }
@@ -480,33 +523,19 @@ function StartupsPage() {
       <section className="section-pad subtle-section"><div className="shell editorial-split"><SectionHeading eyebrow="selection" title="The bar is a partner who wants the answer" /><p data-reveal="block">{sparkStatus.selectionCriteria}</p></div></section>
       <section className="section-pad"><div className="shell"><SectionHeading eyebrow="commercials" title="Equity-free, no participation fee" body="Each party keeps its own intellectual property. We are confirming how POC costs are allocated between Quantum Hub, the partner and the startup. Ask us and we will tell you what applies to your case." /><CardGrid cards={[["Programme", sparkStatus.duration], ["Participation", sparkStatus.participationFee], ["Equity", sparkStatus.equity]]} /></div></section>
       <section className="section-pad"><div className="shell"><SparkStatusPanel /></div></section>
-      <ClosingCTA title="Tell us what you have built and where it works" href="/contact?intent=startup" label="Start a conversation" />
+      <ClosingCTA title="Tell us what you have built and where it works" href="/contact" label="Start a conversation" />
     </>
   );
 }
 
 function SparkPage() {
-  const stages = [
-    ["Screening", "Fit is assessed against operational needs raised by partners."],
-    ["Partner meetings", "Quantum Hub and partner business units examine the fit."],
-    ["POC scoping", "The startup and partner define the question, test and criteria."],
-    ["Programme work", "Progress reviews and practical workshops support execution."],
-    ["Decision", "The evidence supports taking it further, testing again with a changed scope, or stopping."],
-  ];
-  const faqs = [
-    ["Does Quantum Hub take equity?", "No. The programme is equity-free and there is no participation fee."],
-    ["Who owns the IP?", "Each party retains all right, title and interest in its own intellectual property."],
-    ["What stage do I need to be at?", "MVP or beta, generally TRL 5 and above, with a full-time team able to support the test."],
-    ["How long does it take?", "The programme runs thirteen weeks. POC execution can run longer than the programme itself."],
-    ["When do applications open?", "No current cohort window or application route is approved for publication."],
-  ];
   return (
     <>
       <PageHero eyebrow="spark" title="A POC runway with a partner who wants the answer" body="SPARK is a thirteen-week POC runway programme for MVP+ startups. It is equity-free and there is no participation fee." orbitDot={false} />
       <section className="section-pad"><div className="shell"><SparkStatusPanel /></div></section>
-      <section className="spark-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="programme route" title="From screening to a decision" /><div className="vertical-steps">{stages.map(([title, body], index) => <article key={title} data-reveal="block"><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></article>)}</div></div></section>
-      <section className="faq-section section-pad"><div className="shell faq-layout"><SectionHeading eyebrow="frequently asked" title="Before you take part" /><div>{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<i /></summary><p>{answer}</p></details>)}</div></div></section>
-      <ClosingCTA title="Tell us what you have built and where it works" href="/contact?intent=startup" label="Start a conversation" />
+      <section className="route-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="programme route" title="From screening to a decision" /><ol className="vertical-steps">{sparkRouteContent.stages.map(([title, body], index) => <li key={title} data-reveal="block"><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></li>)}</ol></div></section>
+      <section className="faq-section section-pad"><div className="shell faq-layout"><SectionHeading eyebrow="frequently asked" title="Before you take part" /><div>{sparkRouteContent.faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<i /></summary><p>{answer}</p></details>)}</div></div></section>
+      <ClosingCTA title="Tell us what you have built and where it works" links={[["For Startups", "/for-startups"], ["How POCs Work", "/pocs"]]} />
     </>
   );
 }
@@ -522,18 +551,13 @@ function IndustriesPage() {
 }
 
 function PocsPage() {
-  const method = [
-    ["Start with the question", "Every POC has one narrow, answerable question at its centre."],
-    ["Scope deliberately", "The plan defines scenarios, KPIs, pass criteria and what is out of scope."],
-    ["Isolate the risk", "Live-system interactions are tested on an isolated network or instrumented mockup first."],
-    ["Report either way", "Results are stated against the criteria fixed before testing, including failed or incomplete scenarios."],
-  ];
+  const resolutionLabels = processStages[4].resolutionLabels;
   return (
     <>
       <PageHero eyebrow="method" title="How a POC actually runs" body="A proof of concept is worth running only if both sides will accept the answer before they know what it is. The method frames the unknown, fixes pass criteria in advance, isolates risk and reports whichever way the results fall." orbitDot={false} />
-      <section className="section-pad"><div className="shell"><SectionHeading eyebrow="the method" title="One unknown at a time" /><CardGrid cards={method} columns={4} /></div></section>
+      <section className="route-steps poc-method-section section-pad"><div className="shell"><SectionHeading inverse eyebrow={homeNarrativeCopy.story.eyebrow} title={homeNarrativeCopy.story.title} body={homeNarrativeCopy.story.body} /><ol className="vertical-steps">{processStages.map((stage) => <li key={stage.id} data-reveal="block"><span>0{stage.order}</span><h3><TitleText text={stage.title} /></h3><p>{stage.description}</p></li>)}</ol><div className="poc-standard"><SectionHeading inverse eyebrow={homeNarrativeCopy.evidence.eyebrow} title={homeNarrativeCopy.evidence.title} body={homeNarrativeCopy.evidence.body} /><CardGrid cards={homeNarrativeCopy.evidence.items} compact /><div className="method-resolution" data-reveal="block"><h3>Resolution</h3><ul>{resolutionLabels?.map((label) => <li key={label}>{label}</li>)}</ul></div></div></div></section>
       <NeedsBoard />
-      <section className="playground-section section-pad subtle-section"><div className="shell playground-layout"><div><SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and working sites" body="The workshop supports integration and bench mockups. An instrumented Kia EV6 provides a vehicle platform. Partner environments support tests that cannot be simulated." /><Action href="/case-studies" secondary>Evidence publication standard</Action></div><PlaygroundPanel /></div></section>
+      <section className="playground-section poc-playground section-pad subtle-section"><div className="shell playground-layout"><div><SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and working sites" body="The workshop supports integration and bench mockups. An instrumented Kia EV6 provides a vehicle platform. Partner environments support tests that cannot be simulated." /><Action href="/case-studies" secondary>Evidence publication standard</Action></div><PlaygroundPanel /></div></section>
       <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="reporting" title="One report format, whatever the result" /><p data-reveal="block">Executive summary, objectives, setup, test plan, results per scenario, conclusions and recommendations. Results are stated against the criteria fixed before testing.</p></div></section>
       <ClosingCTA title="Bring the question" />
     </>
@@ -563,7 +587,7 @@ function ContactPage() {
   return (
     <>
       <PageHero eyebrow="get in touch" title="Start with the need" body="Tell us what you are trying to find out. The more specific the question, the faster we can tell you whether Quantum Hub can help." />
-      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal="block"><Eyebrow>contact details</Eyebrow><h2><TitleText text="A public form is not available" /></h2><p>{publicContact.address}</p><a href={publicContact.linkedin} target="_blank" rel="noreferrer">Quantum Hub on LinkedIn <Arrow /></a></div><div className="form-card" data-reveal="block"><LeadForm kind="contact" /></div></div></section>
+      <section className="form-section section-pad"><div className="shell form-layout"><div data-reveal="block"><Eyebrow>contact details</Eyebrow><h2><TitleText text="A public form is not available" /></h2><p>{publicContact.address}</p><a href={publicContact.linkedin} target="_blank" rel="noreferrer">Quantum Hub on LinkedIn <Arrow /></a></div><div className="availability-card" data-reveal="block"><ClosedSubmissionState kind="contact" /></div></div></section>
     </>
   );
 }
@@ -572,7 +596,7 @@ function SparkRegisterPage() {
   return (
     <>
       <PageHero eyebrow="spark application status" title="Applications are not open right now" body="No current cohort window, application URL or approved privacy wording is available for publication." />
-      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal="block"><Eyebrow>field readiness</Eyebrow><h2><TitleText text="No submission route is active" /></h2><p>When an application route is approved, the SPARK page will state the dates and requirements explicitly.</p></div><div className="form-card" data-reveal="block"><LeadForm kind="spark-register" /></div></div></section>
+      <section className="form-section application-section section-pad"><div className="shell form-layout"><div data-reveal="block"><Eyebrow>field readiness</Eyebrow><h2><TitleText text="No submission route is active" /></h2><p>When an application route is approved, the SPARK page will state the dates and requirements explicitly.</p></div><div className="availability-card" data-reveal="block"><ClosedSubmissionState kind="spark-register" /></div></div></section>
     </>
   );
 }
@@ -594,6 +618,15 @@ function RoutePage({ route }: RouteProps) {
 
 export default function SiteExperience({ route }: RouteProps) {
   useRevealFoundation(route);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousRoute = root.dataset.quantumRoute;
+    root.dataset.quantumRoute = route;
+    if (!previousRoute || previousRoute === route) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById("main-content")?.focus({ preventScroll: true }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [route]);
 
   useEffect(() => {
     document.documentElement.classList.add("js-ready");
@@ -645,6 +678,7 @@ export default function SiteExperience({ route }: RouteProps) {
 
   return (
     <>
+      <NoScriptExperienceStyles />
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="scroll-progress" data-scroll-progress aria-hidden="true" />
       <SiteHeader route={route} />

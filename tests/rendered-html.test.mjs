@@ -68,6 +68,31 @@ test("homepage instrument does not replace the POC challenge catalogue", async (
   assert.match(pocs, /class="needs-grid"/i);
   assert.match(pocs, /Filter representative challenges/i);
   assert.match(pocs, /These categories describe the kind of work we do\./i);
+  assert.match(pocs, /Five stages, from need to decision/i);
+  for (const principle of ["Criteria first", "Real environments", "An answer either way"]) assert.match(pocs, new RegExp(principle, "i"));
+  for (const resolution of ["Scale", "Reconfigure + retest", "Useful no"]) assert.ok(pocs.includes(`>${resolution}<`), resolution);
+  assert.match(pocs, /playground-static-controls/i);
+});
+
+test("SPARK preserves approved copy and exposes only informational continuation", async () => {
+  const html = await (await render("/spark")).text();
+  const normalized = html.replaceAll("<!-- -->", "");
+  assert.match(html, /SPARK is a thirteen-week POC runway programme for MVP\+ startups\./i);
+  assert.match(html, /Applications are not open right now/i);
+  assert.match(normalized, /<strong>11 cohorts have run\.<\/strong> As of August 2026\./i);
+  assert.match(html, /href="\/for-startups"/i);
+  assert.match(html, />For Startups</i);
+  assert.match(html, /href="\/pocs"/i);
+  assert.match(html, />How POCs Work</i);
+  assert.doesNotMatch(html, /href="\/spark-register"/i);
+  assert.doesNotMatch(html, /<form\b|<input\b|<textarea\b|type="file"/i);
+});
+
+test("internal navigation carries no unused intent query strings", async () => {
+  for (const route of ["/", "/for-partners", "/for-startups", "/spark", "/contact"]) {
+    const html = await (await render(route)).text();
+    assert.doesNotMatch(html, /\?intent=/i, route);
+  }
 });
 
 test("partner presentation is names-only", async () => {
@@ -109,6 +134,10 @@ test("named case and unknown routes return real 404 responses", async () => {
     const response = await render(route);
     assert.equal(response.status, 404, route);
   }
+  const notFound = await readFile(new URL("../app/not-found.tsx", import.meta.url), "utf8");
+  assert.match(notFound, /className="not-found-brand"/i);
+  assert.match(notFound, /src="\/quantum-logo\.svg"/i);
+  assert.match(notFound, /That page is not here/i);
 });
 
 test("canonical and organization URLs require an approved production origin", async () => {
@@ -155,5 +184,6 @@ test("unavailable forms expose no input controls", async () => {
     const html = await (await render(route)).text();
     assert.doesNotMatch(html, /<form\b|<input\b|<textarea\b/i, route);
     assert.match(html, /No information can be submitted/i, route);
+    assert.match(html, /class="form-status-links"/i, route);
   }
 });

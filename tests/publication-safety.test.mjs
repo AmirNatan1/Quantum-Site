@@ -58,6 +58,20 @@ test("fresh public output contains no dormant scoring or simulated result surfac
   assert.match(output, /Illustrative operating model — not a live match\./i);
 });
 
+test("fresh public output keeps Phase 5 routes closed and non-submitting", async () => {
+  const output = await readPublicOutput();
+  const closedRoutes = await Promise.all([
+    path.resolve("dist/client/contact.html"),
+    path.resolve("dist/client/spark-register.html"),
+  ].map((file) => readFile(file, "utf8")));
+  const closedOutput = closedRoutes.join("\n");
+  assert.doesNotMatch(output, /\?intent=/i);
+  assert.doesNotMatch(output, /href=["']\/spark-register["']/i);
+  assert.doesNotMatch(closedOutput, /<form\b|<textarea\b|<input\b/i);
+  assert.match(closedOutput, /Submission unavailable/i);
+  assert.match(closedOutput, /Applications are not open right now/i);
+});
+
 test("fresh public output excludes blocked metrics and unapproved asset references", async () => {
   const output = await readPublicOutput();
   for (const pattern of [

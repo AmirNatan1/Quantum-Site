@@ -137,8 +137,8 @@ test("audience preference starts neutral, remains reversible, and stores only th
   await expect(page.locator('.closing-conversion[data-audience="startup"]')).toBeVisible();
   await page.reload();
   await expect(page.getByRole("radio", { name: "I have a technology" })).toBeChecked();
-  await expect(page.locator('.closing-conversion a[href*="intent=challenge"]')).toBeVisible();
-  await expect(page.locator('.closing-conversion a[href*="intent=startup"]')).toBeVisible();
+  await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();
+  await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
 });
 
 test("all five stage diagrams and the three evidence-safe resolutions are present", async ({ page }) => {
@@ -229,7 +229,7 @@ test("analytics emits only bounded audience, stage, and final CTA payloads", asy
   await page.getByRole("radio", { name: "I have an operational need" }).check();
   await page.locator('[data-signal-anchor="field-poc"]').scrollIntoViewIfNeeded();
   await expect.poll(() => page.evaluate(() => (window as Window & { __phase3Events?: { event?: string }[] }).__phase3Events?.some(({ event }) => event === "story_stage_reached"))).toBe(true);
-  const cta = page.locator('.closing-conversion a[href*="intent=challenge"]');
+  const cta = page.locator('.closing-conversion a[href="/for-partners"]');
   await cta.evaluate((element) => element.addEventListener("click", (event) => event.preventDefault(), { once: true }));
   await cta.click();
   const events = await page.evaluate(() => (window as Window & { __phase3Events?: Record<string, unknown>[] }).__phase3Events ?? []);
@@ -311,8 +311,8 @@ test.describe("Phase 3 without JavaScript", () => {
     await expect(page.locator(".alignment-connectors")).toBeVisible();
     await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
     await expect(page.locator("#signal-story [data-signal-stage] > .signal-stage-diagram")).toHaveCount(5);
-    await expect(page.locator('.closing-conversion a[href*="intent=challenge"]')).toBeVisible();
-    await expect(page.locator('.closing-conversion a[href*="intent=startup"]')).toBeVisible();
+    await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();
+    await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
     await expect(page.getByText("Useful no", { exact: true })).toBeVisible();
   });
 });

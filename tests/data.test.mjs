@@ -6,6 +6,7 @@ import {
   partners,
   publicationGates,
   routeMetadata,
+  sparkRouteContent,
   sparkStatus,
   updateRecords,
 } from "../app/data/index.ts";
@@ -36,6 +37,9 @@ test("SPARK remains unconfirmed and date-qualified", () => {
   assert.equal(sparkStatus.cohortCount, 11);
   assert.equal(sparkStatus.cohortAsOf, "August 2026");
   assert.match(sparkStatus.duration, /Thirteen weeks/);
+  assert.equal(sparkRouteContent.status.heading, "Applications are not open right now");
+  assert.equal(sparkRouteContent.stages.length, 5);
+  assert.equal(sparkRouteContent.faqs.length, 5);
 });
 
 test("blocked and hidden routes cannot become indexable", () => {

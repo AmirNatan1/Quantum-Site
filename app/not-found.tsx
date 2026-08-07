@@ -6,6 +6,7 @@ export default function NotFound() {
   return (
     <main className="not-found-page" id="main-content">
       <div className="shell">
+        <Link href="/" className="not-found-brand" aria-label="Quantum Hub home"><img src="/quantum-logo.svg" alt="Quantum Hub" width="174" height="44" /></Link>
         <span>404</span>
         <h1>That page is not here</h1>
         <p>The link may be old, or the page may have moved. These are the two most useful places to start.</p>

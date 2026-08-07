@@ -28,8 +28,9 @@ export function ClosingConversion() {
         <AccessibleHeading as="h2" text={copy.title} reveal />
         <p>{copy.body}</p>
         <div>
-          <Link className={audience === "partner" ? "is-emphasized" : ""} href="/contact?intent=challenge" onClick={() => trackCta("partner")}>{homeNarrativeCopy.conversion.partnerAction}</Link>
-          <Link className={audience === "startup" ? "is-emphasized" : ""} href="/contact?intent=startup" onClick={() => trackCta("startup")}>{homeNarrativeCopy.conversion.startupAction}</Link>
+          {/* Legacy intent=challenge and intent=startup query destinations are intentionally not used. */}
+          <Link className={audience === "partner" ? "is-emphasized" : ""} href="/for-partners" onClick={() => trackCta("partner")}>{homeNarrativeCopy.conversion.partnerAction}</Link>
+          <Link className={audience === "startup" ? "is-emphasized" : ""} href="/for-startups" onClick={() => trackCta("startup")}>{homeNarrativeCopy.conversion.startupAction}</Link>
         </div>
       </div>
     </section>
