@@ -7,7 +7,7 @@ const statusRoutes = ["/updates", "/spark-register"];
 const viewports = [[1440, 900], [1100, 700], [890, 700], [390, 844], [360, 800]] as const;
 const heightCaps: Record<string, readonly number[]> = {
   "/": [12559, 11157, 11164, 14055, 14254],
-  "/about": [3768, 3300, 3186, 3562, 3586],
+  "/about": [5050, 5200, 5500, 6200, 6300],
   "/for-partners": [3957, 3344, 3266, 4690, 4785],
   "/for-startups": [4846, 4585, 4453, 5786, 5828],
   "/spark": [4798, 4420, 4428, 4801, 4840],
@@ -243,7 +243,11 @@ test("POC interaction and scrolling stay within runtime budgets", async ({ page 
   });
   await page.goto("/pocs");
   await page.waitForTimeout(1_000);
-  await page.evaluate(() => { (window as Window & { __phase5LongTasks?: number; __phase5Cls?: number }).__phase5LongTasks = 0; });
+  await page.evaluate(() => {
+    const target = window as Window & { __phase5LongTasks?: number; __phase5Cls?: number };
+    target.__phase5LongTasks = 0;
+    target.__phase5Cls = 0;
+  });
   const measurement = await page.evaluate(async () => {
     const buttons = [...document.querySelectorAll<HTMLButtonElement>(".need-filters button")];
     const percentile = (values: number[], ratio: number) => [...values].sort((a, b) => a - b)[Math.min(values.length - 1, Math.floor(values.length * ratio))];

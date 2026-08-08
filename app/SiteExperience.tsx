@@ -28,6 +28,7 @@ import { useQuantumSignalNarrative } from "./hooks/useQuantumSignalNarrative";
 import { emitScrollFrame } from "./lib/scroll-frame";
 
 type RouteProps = { route: string };
+type SiteExperienceProps = RouteProps & { aboutTeam?: ReactNode };
 
 const noScriptStyles = `
   .scroll-progress,.need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"],.audience-selector input{display:none!important}
@@ -486,12 +487,13 @@ function HomePage() {
   );
 }
 
-function AboutPage() {
+function AboutPage({ team }: { team?: ReactNode }) {
   return (
     <>
       <PageHero eyebrow="about" title="Owned by industry, built to test" body="Quantum Hub is wholly owned by the Taavura-Livnat Group and operates as a shared platform for a group of industrial partners. That structure is why technology can be tested in a working environment rather than a demonstration." />
       <section className="partner-detail-section section-pad"><div className="shell"><SectionHeading eyebrow="the consortium" title="The partners" body="Partner names and roles are shown without logos, scale figures or tier labels." /><div className="partner-accordion">{partners.map((partner) => <details key={partner.name}><summary><span>{partner.short}</span><b>{partner.name}</b><i /></summary><div><p>{partner.description}</p></div></details>)}</div></div></section>
       <section className="section-pad subtle-section"><div className="shell editorial-split"><SectionHeading eyebrow="selection" title="How we decide what to work on" /><p data-reveal="block">Technologies reach Quantum Hub through scouting, partner referral and programmes. They pass an initial review, technical diligence, and assessment by the partner business unit that would host the test. A technology with no internal owner on the partner side does not proceed.</p></div></section>
+      {team}
       <section className="section-pad"><div className="shell editorial-split"><SectionHeading eyebrow="company details" title={legalDetails.entityName} /><p data-reveal="block">Company number {legalDetails.companyNumber}<br />{legalDetails.registeredAddress}</p></div></section>
       <ClosingCTA title="Start with one question worth answering" />
     </>
@@ -601,9 +603,9 @@ function SparkRegisterPage() {
   );
 }
 
-function RoutePage({ route }: RouteProps) {
+function RoutePage({ route, aboutTeam }: SiteExperienceProps) {
   if (route === "/") return <HomePage />;
-  if (route === "/about") return <AboutPage />;
+  if (route === "/about") return <AboutPage team={aboutTeam} />;
   if (route === "/for-partners") return <PartnersPage />;
   if (route === "/for-startups") return <StartupsPage />;
   if (route === "/spark") return <SparkPage />;
@@ -616,7 +618,7 @@ function RoutePage({ route }: RouteProps) {
   return null;
 }
 
-export default function SiteExperience({ route }: RouteProps) {
+export default function SiteExperience({ route, aboutTeam }: SiteExperienceProps) {
   useRevealFoundation(route);
 
   useEffect(() => {
@@ -682,7 +684,7 @@ export default function SiteExperience({ route }: RouteProps) {
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="scroll-progress" data-scroll-progress aria-hidden="true" />
       <SiteHeader route={route} />
-      <main id="main-content" tabIndex={-1}><RoutePage route={route} /></main>
+      <main id="main-content" tabIndex={-1}><RoutePage route={route} aboutTeam={aboutTeam} /></main>
       <SiteFooter />
     </>
   );

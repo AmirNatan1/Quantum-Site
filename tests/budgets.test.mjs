@@ -17,6 +17,26 @@ test("the approved brand assets remain within their budgets", async () => {
   assert.doesNotMatch(source, /<video|HeroMedia|poster=/);
 });
 
+test("the approved team portraits remain within their asset budget", async () => {
+  const directory = fileURLToPath(new URL("../public/team/", import.meta.url));
+  const files = (await readdir(directory)).sort();
+  assert.deepEqual(files, [
+    "dalia-damary.jpg",
+    "dana-taigman-koren.jpg",
+    "din-shalit.jpg",
+    "evyatar-ben-ishay.jpg",
+    "liav-ben-rubi.jpg",
+    "neta-fuchs.jpg",
+    "oz-dekel.jpg",
+    "shay-livnat.jpg",
+    "yael-silberbusch.jpg",
+    "yuval-asayag.jpg",
+  ]);
+  const sizes = await Promise.all(files.map(async (file) => (await stat(path.join(directory, file))).size));
+  assert.ok(sizes.every((size) => size <= 250 * 1024), `largest portrait is ${Math.max(...sizes)} bytes`);
+  assert.ok(sizes.reduce((total, size) => total + size, 0) <= 1.5 * 1024 * 1024, `portrait aggregate is ${sizes.reduce((total, size) => total + size, 0)} bytes`);
+});
+
 test("built client assets stay within initial gzip guardrails", async () => {
   const directory = fileURLToPath(new URL("../dist/client/assets/", import.meta.url));
   const files = await readdir(directory);

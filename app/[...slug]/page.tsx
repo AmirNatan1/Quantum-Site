@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteExperience from "../SiteExperience";
+import { TeamSection } from "../components/about/TeamSection";
 import { routeMetadata } from "../content";
 import { getConfiguredSiteUrl } from "../lib/structured-data";
 
@@ -46,5 +47,5 @@ export default async function ContentPage({ params }: PageProps) {
   const { slug } = await params;
   const route = toRoute(slug);
   if (!routeMetadata[route]) notFound();
-  return <SiteExperience route={route} />;
+  return <SiteExperience route={route} aboutTeam={route === "/about" ? <TeamSection /> : undefined} />;
 }

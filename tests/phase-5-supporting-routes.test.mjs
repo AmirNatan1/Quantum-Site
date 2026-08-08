@@ -49,7 +49,7 @@ test("analytics is event-discriminated and the Phase 5 payload is bounded", asyn
 test("supporting routes remove infinite scan motion and inactive production styles", async () => {
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.doesNotMatch(styles, /@keyframes\s+scan|animation:\s*scan/i);
-  for (const inactive of [/\.team-(?:section|grid|card|image)/, /\.case-detail/, /\.updates-list/, /\.form-card\s+(?:form|input|textarea)/, /\.form-submit/, /\.application-form/]) {
+  for (const inactive of [/\.case-detail/, /\.updates-list/, /\.form-card\s+(?:form|input|textarea)/, /\.form-submit/, /\.application-form/]) {
     assert.doesNotMatch(styles, inactive, inactive.source);
   }
 });

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
+import { teamMembers } from "../app/data/team.ts";
 
 const publicRoutes = [
   "/",
@@ -88,6 +89,36 @@ test("SPARK preserves approved copy and exposes only informational continuation"
   assert.doesNotMatch(html, /<form\b|<input\b|<textarea\b|type="file"/i);
 });
 
+test("about server-renders the exact approved team roster", async () => {
+  const html = await (await render("/about")).text();
+  const normalized = html.replaceAll("<!-- -->", "").replaceAll("&amp;", "&");
+  const selection = normalized.indexOf("How we decide what to work on");
+  const team = normalized.indexOf("Who you&#x27;ll work with");
+  const company = normalized.indexOf("company details");
+  assert.ok(selection >= 0 && team > selection && company > team);
+  assert.match(normalized, /<section[^>]+class="team-section section-pad"[^>]+aria-labelledby="about-team-heading"/i);
+  assert.match(normalized, /<ul class="team-grid" data-team-roster="true">/i);
+
+  let previous = -1;
+  for (const member of teamMembers) {
+    const position = normalized.indexOf(member.name, previous + 1);
+    assert.ok(position > previous, member.name);
+    previous = position;
+    assert.ok(normalized.includes(member.title), member.title);
+    assert.ok(normalized.includes(`href="${member.linkedin}"`), member.linkedin);
+    assert.ok(normalized.includes(`aria-label="${member.name} on LinkedIn (opens in a new tab)"`), member.name);
+    const image = normalized.match(new RegExp(`<img[^>]+src="${member.image.replaceAll("/", "\\/")}"[^>]*>`, "i"))?.[0] ?? "";
+    assert.ok(image, member.image);
+    assert.match(image, /width="600"/i);
+    assert.match(image, /height="600"/i);
+    assert.ok(image.includes(`alt="${member.name}"`), member.name);
+    assert.match(image, /loading="lazy"/i);
+    assert.match(image, /decoding="async"/i);
+  }
+  assert.equal((normalized.match(/class="team-card"/g) ?? []).length, 10);
+  assert.doesNotMatch(normalized, /team-(?:bio|credential|achievement|tenure|expertise)/i);
+});
+
 test("internal navigation carries no unused intent query strings", async () => {
   for (const route of ["/", "/for-partners", "/for-startups", "/spark", "/contact"]) {
     const html = await (await render(route)).text();
@@ -170,7 +201,6 @@ test("only approved public assets remain", async () => {
     "../public/og-signal-v1.png",
     "../public/media/hero-quantum-hub-v1.webp",
     "../public/quantum-logo-inverse.svg",
-    "../public/team/shay-livnat.jpg",
     "../public/robots.txt",
     "../public/sitemap.xml",
     "../public/favicon.svg",

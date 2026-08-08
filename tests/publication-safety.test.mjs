@@ -78,10 +78,24 @@ test("fresh public output excludes blocked metrics and unapproved asset referenc
     /hero-quantum-hub-v1/i,
     /og-signal-v1/i,
     /quantum-logo-inverse/i,
-    /\/team\//i,
     /100 beta sites/i,
     />50%/i,
   ]) assert.doesNotMatch(output, pattern, pattern.source);
+
+  const approvedTeamAssets = [
+    "/team/dalia-damary.jpg",
+    "/team/dana-taigman-koren.jpg",
+    "/team/din-shalit.jpg",
+    "/team/evyatar-ben-ishay.jpg",
+    "/team/liav-ben-rubi.jpg",
+    "/team/neta-fuchs.jpg",
+    "/team/oz-dekel.jpg",
+    "/team/shay-livnat.jpg",
+    "/team/yael-silberbusch.jpg",
+    "/team/yuval-asayag.jpg",
+  ];
+  const teamReferences = [...new Set(output.match(/\/team\/[a-z0-9-]+\.jpg/gi) ?? [])].sort();
+  assert.deepEqual(teamReferences, approvedTeamAssets);
 
   const rendered = (await collectFiles(path.resolve("dist/client"))).filter((file) => /\.(?:html|rsc)$/i.test(file));
   const payload = (await Promise.all(rendered.map((file) => readFile(file, "utf8")))).join("\n");
