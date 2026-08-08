@@ -312,7 +312,6 @@ main:focus { outline: none; }
 .section-heading p { max-width: 70ch; margin-top: var(--space-5); color: var(--text-secondary); font-size: var(--type-size-body-large); line-height: var(--type-line-body); }
 .section-heading.inverse h2 { color: var(--white); }
 .section-heading.inverse p { color: rgba(255, 255, 255, .66); }
-.section-action { margin-top: 40px; display: flex; justify-content: flex-end; }
 
 /* Reveal motion: content is visible until JavaScript explicitly prepares it. */
 [data-reveal="block"] {
@@ -396,20 +395,6 @@ main:focus { outline: none; }
 .sector-display-copy h3 { margin-top: 14px; font-size: var(--type-size-display-2); letter-spacing: var(--type-track-display-2); }
 .sector-display-copy p { margin-top: 20px; color: var(--text-secondary); font-size: var(--type-size-body-large); }
 .sector-display-copy a { min-height: var(--size-hit-target); margin-top: 28px; display: inline-flex; align-items: center; gap: var(--space-3); color: var(--text-primary); font-size: var(--type-size-body-small); font-weight: 800; }
-
-/* Proof cards */
-.proof-section { background: var(--white); }
-.outcome-grid { margin-top: 64px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
-.outcome-grid-featured { grid-template-columns: repeat(4, 1fr); }
-.outcome-card { min-height: 390px; padding: 30px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-panel); display: flex; flex-direction: column; transition: transform var(--motion-interface-slow) var(--ease-interface), box-shadow var(--motion-interface-slow) var(--ease-interface), border-color var(--motion-interface-slow) var(--ease-interface); }
-.outcome-top { display: flex; justify-content: space-between; color: var(--ink-600); font: var(--fs-micro) var(--font-mono); letter-spacing: .11em; text-transform: uppercase; }
-.outcome-signal { margin-top: 40px; display: flex; align-items: center; gap: 10px; color: var(--magenta-700); font: var(--fs-micro) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
-.outcome-signal i { position: relative; width: 34px; height: 1px; background: var(--magenta-200); }
-.outcome-signal i::after { content: ""; position: absolute; right: 0; top: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--magenta-500); }
-.outcome-card h3 { margin-top: 19px; font-size: var(--type-size-display-3); }
-.outcome-card > p { margin-top: 18px; color: var(--text-secondary); font-size: var(--type-size-body-small); line-height: var(--type-line-body); }
-.outcome-link { margin-top: auto; padding-top: 22px; display: flex; gap: 12px; align-items: center; color: var(--text-primary); font-size: var(--type-size-label); font-weight: 800; }
-.outcome-grid:not(.outcome-grid-featured) .outcome-card { min-height: 330px; }
 
 /* SPARK and playground */
 .spark-band { position: relative; padding: 120px 0; background: var(--ink-900); overflow: hidden; }
@@ -542,15 +527,6 @@ main:focus { outline: none; }
 .sector-row h2 { margin-top: 18px; font-size: var(--type-size-display-2); }
 .sector-row > div:last-child p { color: var(--text-secondary); font-size: var(--type-size-body-large); }
 .sector-row > div:last-child p + p { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: var(--type-size-body-small); }
-.test-matrix-section { padding: 0 0 128px; }
-.test-matrix { padding: 28px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-stage); color: var(--text-inverse); }
-.test-matrix > div { min-height: 94px; border-bottom: 1px solid rgba(255, 255, 255, .13); display: grid; grid-template-columns: .5fr 1.5fr 40px; align-items: center; gap: 30px; }
-.test-matrix > div:first-child { min-height: 66px; grid-template-columns: 1fr auto; }
-.test-matrix > div:last-child { border-bottom: 0; }
-.test-matrix span, .test-matrix b { color: rgba(255, 255, 255, .78); font: var(--fs-micro) var(--font-mono); letter-spacing: .1em; font-weight: 400; }
-.test-matrix strong { font: 500 var(--type-size-body-large) var(--font-display); letter-spacing: var(--type-track-display-3); }
-.test-matrix i { width: 8px; height: 8px; border-radius: 50%; background: var(--magenta-500); }
-
 /* Forms */
 .form-section { background: var(--ink-50); }
 .form-layout { display: grid; grid-template-columns: .75fr 1.25fr; gap: 9vw; align-items: start; }
@@ -585,7 +561,7 @@ main:focus { outline: none; }
 
 @media (max-width: 1100px) {
   .hero-grid { grid-template-columns: minmax(0, 820px); }
-  .outcome-grid-featured, .plain-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .plain-grid-4 { grid-template-columns: repeat(2, 1fr); }
   .vertical-steps > li { grid-template-columns: 70px .8fr 1fr; gap: 24px; }
   .sector-display { padding: 38px; }
   .playground-layout { gap: 5vw; }
@@ -666,8 +642,7 @@ main:focus { outline: none; }
   .sector-display { min-height: 400px; padding: 26px; }
   .sector-display-copy h3 { font-size: var(--type-size-display-3); }
   .sector-radar { right: -180px; }
-  .outcome-grid, .outcome-grid-featured, .plain-grid-4 { grid-template-columns: 1fr; }
-  .outcome-card { min-height: 330px; }
+  .plain-grid-4 { grid-template-columns: 1fr; }
   .spark-band { padding: 86px 0; }
   .playground-layout { gap: 40px; }
   .vehicle-stage { min-height: 240px; }
@@ -701,8 +676,6 @@ main:focus { outline: none; }
   .sector-row { min-height: 0; padding: 60px 0; grid-template-columns: 42px 1fr; gap: 22px; }
   .sector-row h2 { font-size: var(--type-size-display-3); }
   .sector-row > div:last-child p { font-size: var(--type-size-body); }
-  .test-matrix > div { min-height: 84px; grid-template-columns: 90px 1fr 12px; gap: 12px; }
-  .test-matrix strong { font-size: var(--type-size-body); }
   .availability-card { padding: 24px; }
   .footer-main { padding-top: 70px; }
   .footer-nav { grid-template-columns: repeat(2, 1fr); gap: 32px; }
@@ -724,7 +697,6 @@ main:focus { outline: none; }
   .action-inverse:hover { color: var(--white); }
   a:hover .arrow-line::before, button:hover .arrow-line::before { width: 20px; }
   .sector-tabs button:hover { padding-left: 30px; background: var(--ink-50); color: var(--ink-900); }
-  .outcome-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--ink-200); }
   .playground-controls button:hover { background: var(--magenta-50); }
   .plain-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
   .footer-nav a:hover { color: var(--white); }

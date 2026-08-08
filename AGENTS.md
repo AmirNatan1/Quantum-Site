@@ -15,6 +15,14 @@ The governing narrative is:
 
 > An operational need appears. A signal is detected. Relevant technologies converge. A field test is designed. Evidence is generated. A decision is made. What works scales.
 
+## Current release posture
+
+- Production is deployed through Cloudflare Pages Git integration from `main`, using `npm run build` and the `dist/client` output.
+- `NEXT_PUBLIC_SITE_URL` is required only for the main production Pages build and must be an approved HTTPS origin.
+- Contact and SPARK submission surfaces are closed; their Pages Functions remain fail-closed and must not be activated by environment configuration alone.
+- Representative challenges and the Phase 4 decision instrument remain illustrative, not live matching, evidence, readiness, or application services.
+- Dormant match, evidence, outcome, media, authentication, and legacy form surfaces are not approved production scaffolding and must not be restored without a fresh publication-safety review.
+
 ## Required reading before editing
 
 Before changing code, read:
