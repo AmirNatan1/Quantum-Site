@@ -435,7 +435,7 @@ test("all five stage compositions progress and the last handoff is outcome-neutr
   await expect(page.locator('.signal-panel-layer[data-panel-stage="field-poc"] .diagram-evidence-bar')).toHaveCount(0);
   await expect(page.locator('.signal-panel-layer[data-panel-stage="field-poc"] [data-diagram-part="criteria"]')).toHaveCount(1);
   await expect(page.locator('.signal-panel-layer[data-panel-stage="field-poc"] [data-diagram-part="method"]')).toHaveCount(5);
-  await expect(page.locator(".quantum-signal-node.is-resolved")).toHaveCount(0);
+  await expect(page.locator(".quantum-signal-anchor-mark")).toHaveCount(16);
   await expect(page.locator('.signal-resolution-labels li')).toHaveText(["Scale", "Reconfigure + retest", "Useful no"]);
 });
 

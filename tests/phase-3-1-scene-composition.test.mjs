@@ -96,7 +96,7 @@ test("resolution handoff stays neutral among scale, reconfigure, and useful no",
   assert.doesNotMatch(path, /RESOLVED_ANCHORS|is-resolved/);
   for (const outcome of ["Scale", "Reconfigure + retest", "Useful no"]) assert.match(data, new RegExp(outcome.replace("+", "\\+")));
   assert.match(hook, /target = processStages\[stageIndex \+ 1\]\?\.id \?\? "representative-challenges"/);
-  assert.match(styles, /\.quantum-signal-fallback i:last-child \{ border-radius: 2px; background: var\(--ink-600\); \}/);
+  assert.match(styles, /\.quantum-signal-fallback i:last-child \{ height: 9px; border: 1px solid var\(--ink-600\); background: var\(--surface-panel\); \}/);
   assert.doesNotMatch(styles, /\.quantum-signal-fallback i:last-child[^}]*color-proven/s);
   assert.doesNotMatch(styles, /\.quantum-signal-fallback \{[^}]*color-proven/s);
 });

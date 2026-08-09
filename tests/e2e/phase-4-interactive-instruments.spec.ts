@@ -275,7 +275,7 @@ test("result resolution keeps the scaffold stable and remeasures the continuous 
 
   const panel = form.locator(".challenge-result-panel");
   const beforePanel = await panel.boundingBox();
-  const path = page.locator(".quantum-signal-progress");
+  const path = page.locator(".quantum-signal-track");
   const beforePath = await path.getAttribute("d");
   await form.locator('input[name="challenge-filter"][value="logistics"]').check();
   await expect.poll(() => path.getAttribute("d")).not.toBe(beforePath);

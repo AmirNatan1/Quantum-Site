@@ -83,7 +83,7 @@ test("continuous signal follows the complete ordered contract and regenerates on
     .map((element) => ({ id: (element as HTMLElement).dataset.signalAnchor, order: Number((element as HTMLElement).dataset.signalOrder) }))
     .sort((a, b) => a.order - b.order));
   expect(contract.map(({ id }) => id)).toEqual(anchorIds);
-  const path = page.locator(".quantum-signal-progress");
+  const path = page.locator(".quantum-signal-track");
   await expect.poll(() => path.getAttribute("d")).toContain(" C ");
   const desktopPath = await path.getAttribute("d");
   await page.setViewportSize({ width: 390, height: 844 });
@@ -244,7 +244,9 @@ test("reduced motion resolves the path and presents every stage without sticky b
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator(".quantum-signal-progress")).toHaveCSS("stroke-dashoffset", "0px");
+  await expect(page.locator(".quantum-signal-track")).toHaveCSS("stroke-width", "1px");
+  await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("display", "none");
+  await expect(page.locator(".quantum-signal-head")).toHaveCSS("display", "none");
   await expect(page.locator(".signal-panel")).toBeHidden();
   const stages = page.locator("#signal-story [data-signal-stage]");
   await expect(stages).toHaveCount(5);

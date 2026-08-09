@@ -196,7 +196,9 @@ test("reduced motion resolves reveal and ambient motion to final content", async
   expect(resolved.opacity).toBe("1");
   expect(["none", "0px"].some((value) => resolved.translate.includes(value))).toBe(true);
   expect(resolved.transition).toBe("0s");
-  await expect(page.locator(".quantum-signal-progress")).toHaveCSS("stroke-dashoffset", "0px");
+  await expect(page.locator(".quantum-signal-track")).toHaveCSS("stroke-width", "1px");
+  await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("display", "none");
+  await expect(page.locator(".quantum-signal-head")).toHaveCSS("display", "none");
   await expect(page.locator(".hero-safe-visual > span").first()).toHaveCSS("animation-name", "none");
   await expect(page.locator(".scan-line")).toHaveCSS("animation-name", "none");
 });

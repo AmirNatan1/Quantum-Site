@@ -281,13 +281,19 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       const sceneProgress = normalizeProgress(marker, sceneTiming.local.start, sceneTiming.local.end);
       const sceneHandoff = normalizeProgress(marker, sceneTiming.handoff.start, sceneTiming.handoff.end);
       let signalProgress = signalProgressForScene(scene, sceneIndex, sceneProgress, sceneHandoff, cache.anchorProgress);
+      let carrierLength = 0.028;
       if (scene.id === "quantum-route") {
         const source = processStages[stageIndex]?.id ?? processStages[0].id;
         const target = processStages[stageIndex + 1]?.id ?? "representative-challenges";
         const start = cache.anchorProgress.get(source) ?? signalProgress;
         const end = cache.anchorProgress.get(target) ?? start;
         signalProgress = mix(start, end, stageHandoff);
+        const settled = clamp01((stageProgress - SCENE_PROGRESS.buildEnd) / (SCENE_PROGRESS.settleEnd - SCENE_PROGRESS.buildEnd));
+        carrierLength = mix(0.032, 0.008, settled);
+        if (stageHandoff > 0) carrierLength = mix(0.008, 0.032, stageHandoff);
       }
+      if (root.dataset.activeScene !== scene.id) root.dataset.activeScene = scene.id;
+      writeProgress(root, "--signal-carrier-length", carrierLength, force);
       writeProgress(root, "--signal-progress", signalProgress, force);
     };
 
@@ -423,6 +429,8 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       window.clearTimeout(resizeTimer);
       window.cancelAnimationFrame(measureFrame);
       root.removeAttribute("data-scene-enhanced");
+      root.removeAttribute("data-active-scene");
+      root.style.removeProperty("--signal-carrier-length");
       root.style.removeProperty("--signal-progress");
       homeSceneContract.forEach((scene) => {
         const element = sceneElements.get(scene.id);

@@ -96,8 +96,9 @@ test("reveal styling and runtime fail open", async () => {
   assert.match(headings, /accentI = false/);
   assert.match(headings, /accentI && part === "i"/);
   assert.doesNotMatch(headings, /text\s*===/);
-  assert.match(site, /text="Prove it where" accentI/);
-  assert.match(site, /text="it has to work" accentI/);
+  assert.match(site, /text="Prove it" accentI/);
+  assert.match(site, /text="where it has" accentI/);
+  assert.match(site, /text="to work"/);
   assert.match(alignment, /reveal accentI/);
   assert.match(process, /reveal accentI/);
   assert.doesNotMatch(`${consortium}\n${closing}`, /accentI/);

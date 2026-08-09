@@ -437,7 +437,7 @@ function HomePage() {
         <div className="shell hero-grid">
           <div className="hero-copy" data-reveal="block">
             <Eyebrow>An industrial consortium</Eyebrow>
-            <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it where" accentI /></span><span><TitleText text="it has to work" accentI /></span></h1>
+            <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it" accentI /></span>{" "}<span><TitleText text="where it has" accentI /></span>{" "}<span><TitleText text="to work" /></span></h1>
             <p>Quantum Hub connects operational needs inside major industrial groups with technology that is ready to be tested. We frame the need, find the technology, design the test, run it in the environment where it has to perform, and hand both sides evidence they can decide on.</p>
             <div className="hero-actions">
               <Action href="/for-partners">Bring an operational need</Action>
