@@ -1,4 +1,42 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/assets/fonts/manrope-latin-wght-a30ddcd34970.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("/assets/fonts/jetbrains-mono-latin-wght-83c005d49d8a.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/assets/fonts/poppins-latin-500-cd36de204aca.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/poppins-latin-600-f4e80d9dfd37.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/poppins-latin-700-9338e65fc077.woff2") format("woff2");
+}
 
 :root {
   --ink-950: #101314;
@@ -579,6 +617,7 @@ main:focus { outline: none; }
   .editorial-split, .spark-layout, .playground-layout, .form-layout { gap: 6vw; }
   .sector-interface { grid-template-columns: .95fr 1.05fr; }
   .sector-display { min-height: 430px; padding: 34px; }
+  .sector-radar { top: -88px; }
 }
 
 @media (max-width: 860px) {
@@ -665,7 +704,11 @@ main:focus { outline: none; }
   .poc-standard { margin-top: 24px; padding-top: 24px; grid-template-columns: 1fr; gap: 20px; }
   .poc-standard .plain-grid { margin-top: 0; }
   .poc-standard .plain-card { min-height: 0; padding: 18px; }
-  .poc-standard .plain-card h3 { margin: 16px clamp(-14px, calc((100% - 13ch) / 2), 0px) 0; }
+  .poc-standard .plain-card h3 { margin: 16px clamp(-18px, calc(16px - 1.0625rem), 0px) 0; font-size: min(13.4vw, var(--type-size-display-3)); }
+  .team-section + section .section-heading h2 { font-size: min(14vw, var(--type-size-display-2)); }
+  .closing-inner > * { min-width: 0; }
+  .closing-inner h2 { font-size: min(18vw, var(--type-size-display-1)); }
+  .closing-actions .action { max-width: 100%; }
   .needs-catalogue.section-pad { padding-block: 52px; }
   .needs-catalogue .representative-notice { margin-top: 24px; padding: 18px; }
   .needs-catalogue .need-filters { margin-top: 32px; }
@@ -678,7 +721,8 @@ main:focus { outline: none; }
   .sector-row > div:last-child p { font-size: var(--type-size-body); }
   .availability-card { padding: 24px; }
   .footer-main { padding-top: 70px; }
-  .footer-nav { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+  .footer-main > * { min-width: 0; }
+  .footer-nav { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: 32px; }
   .footer-bottom { padding: 20px 0; min-height: 90px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; }
 }
 

@@ -15,6 +15,7 @@ const types = {
   ".rsc": "text/x-component; charset=utf-8",
   ".svg": "image/svg+xml; charset=utf-8",
   ".webp": "image/webp",
+  ".woff2": "font/woff2",
 };
 
 const server = createServer((request, response) => {

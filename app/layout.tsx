@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { preload } from "react-dom";
 import "./globals.css";
 import "./styles/signal.css";
 import { getConfiguredSiteUrl, OrganizationStructuredData } from "./lib/structured-data";
@@ -34,6 +35,9 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  preload("/assets/fonts/manrope-latin-wght-a30ddcd34970.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+  preload("/assets/fonts/poppins-latin-500-cd36de204aca.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+  preload("/assets/fonts/jetbrains-mono-latin-wght-83c005d49d8a.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
     <html lang="en" suppressHydrationWarning>
       <body><OrganizationStructuredData />{children}</body>

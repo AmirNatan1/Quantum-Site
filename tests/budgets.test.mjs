@@ -37,6 +37,14 @@ test("the approved team portraits remain within their asset budget", async () =>
   assert.ok(sizes.reduce((total, size) => total + size, 0) <= 1.5 * 1024 * 1024, `portrait aggregate is ${sizes.reduce((total, size) => total + size, 0)} bytes`);
 });
 
+test("the approved self-hosted fonts remain within their separate asset budget", async () => {
+  const directory = fileURLToPath(new URL("../public/assets/fonts/", import.meta.url));
+  const files = (await readdir(directory)).filter((file) => file.endsWith(".woff2"));
+  const sizes = await Promise.all(files.map(async (file) => (await stat(path.join(directory, file))).size));
+  assert.equal(files.length, 5);
+  assert.ok(sizes.reduce((total, size) => total + size, 0) <= 85_000, `font aggregate is ${sizes.reduce((total, size) => total + size, 0)} bytes`);
+});
+
 test("built client assets stay within initial gzip guardrails", async () => {
   const directory = fileURLToPath(new URL("../dist/client/assets/", import.meta.url));
   const files = await readdir(directory);
