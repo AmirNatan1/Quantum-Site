@@ -31,10 +31,10 @@ type RouteProps = { route: string };
 type SiteExperienceProps = RouteProps & { aboutTeam?: ReactNode };
 
 const noScriptStyles = `
-  .scroll-progress,.need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"],.audience-selector input{display:none!important}
+  .need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"],.audience-selector input{display:none!important}
   .sector-interface{margin:0!important;border:0!important;display:block!important}
   .audience-selector label{cursor:default!important}
-  @media(max-width:860px){
+  @media(max-width:959px){
     .site-header{position:static!important;height:auto!important;background:#fff!important;border-color:#e7ebec!important}
     .header-inner{min-height:68px;height:auto!important;flex-wrap:wrap}
     .menu-toggle{display:none!important}
@@ -211,17 +211,14 @@ function PageHero({
   title,
   body,
   actions,
-  orbitDot = true,
 }: {
   eyebrow: string;
   title: string;
   body: string;
   actions?: ReactNode;
-  orbitDot?: boolean;
 }) {
   return (
     <section className="page-hero">
-      <div className="page-orbit" aria-hidden="true">{orbitDot ? <span /> : null}</div>
       <div className="shell page-hero-inner" data-reveal="block">
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1><TitleText text={title} /></h1>
@@ -533,7 +530,7 @@ function StartupsPage() {
 function SparkPage() {
   return (
     <>
-      <PageHero eyebrow="spark" title="A POC runway with a partner who wants the answer" body="SPARK is a thirteen-week POC runway programme for MVP+ startups. It is equity-free and there is no participation fee." orbitDot={false} />
+      <PageHero eyebrow="spark" title="A POC runway with a partner who wants the answer" body="SPARK is a thirteen-week POC runway programme for MVP+ startups. It is equity-free and there is no participation fee." />
       <section className="section-pad"><div className="shell"><SparkStatusPanel /></div></section>
       <section className="route-steps section-pad"><div className="shell"><SectionHeading inverse eyebrow="programme route" title="From screening to a decision" /><ol className="vertical-steps">{sparkRouteContent.stages.map(([title, body], index) => <li key={title} data-reveal="block"><span>0{index + 1}</span><h3><TitleText text={title} /></h3><p>{body}</p></li>)}</ol></div></section>
       <section className="faq-section section-pad"><div className="shell faq-layout"><SectionHeading eyebrow="frequently asked" title="Before you take part" /><div>{sparkRouteContent.faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<i /></summary><p>{answer}</p></details>)}</div></div></section>
@@ -556,7 +553,7 @@ function PocsPage() {
   const resolutionLabels = processStages[4].resolutionLabels;
   return (
     <>
-      <PageHero eyebrow="method" title="How a POC actually runs" body="A proof of concept is worth running only if both sides will accept the answer before they know what it is. The method frames the unknown, fixes pass criteria in advance, isolates risk and reports whichever way the results fall." orbitDot={false} />
+      <PageHero eyebrow="method" title="How a POC actually runs" body="A proof of concept is worth running only if both sides will accept the answer before they know what it is. The method frames the unknown, fixes pass criteria in advance, isolates risk and reports whichever way the results fall." />
       <section className="route-steps poc-method-section section-pad"><div className="shell"><SectionHeading inverse eyebrow={homeNarrativeCopy.story.eyebrow} title={homeNarrativeCopy.story.title} body={homeNarrativeCopy.story.body} /><ol className="vertical-steps">{processStages.map((stage) => <li key={stage.id} data-reveal="block"><span>0{stage.order}</span><h3><TitleText text={stage.title} /></h3><p>{stage.description}</p></li>)}</ol><div className="poc-standard"><SectionHeading inverse eyebrow={homeNarrativeCopy.evidence.eyebrow} title={homeNarrativeCopy.evidence.title} body={homeNarrativeCopy.evidence.body} /><CardGrid cards={homeNarrativeCopy.evidence.items} compact /><div className="method-resolution" data-reveal="block"><h3>Resolution</h3><ul>{resolutionLabels?.map((label) => <li key={label}>{label}</li>)}</ul></div></div></div></section>
       <NeedsBoard />
       <section className="playground-section poc-playground section-pad subtle-section"><div className="shell playground-layout"><div><SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and working sites" body="The workshop supports integration and bench mockups. An instrumented Kia EV6 provides a vehicle platform. Partner environments support tests that cannot be simulated." /><Action href="/case-studies" secondary>Evidence publication standard</Action></div><PlaygroundPanel /></div></section>
@@ -633,15 +630,10 @@ export default function SiteExperience({ route, aboutTeam }: SiteExperienceProps
   useEffect(() => {
     document.documentElement.classList.add("js-ready");
     const header = document.querySelector<HTMLElement>("[data-site-header]");
-    const progress = document.querySelector<HTMLElement>("[data-scroll-progress]");
     let frame = 0;
     const updateScroll = () => {
       frame = 0;
       header?.classList.toggle("is-scrolled", window.scrollY > 12);
-      if (progress) {
-        const height = document.documentElement.scrollHeight - window.innerHeight;
-        progress.style.transform = `scaleX(${height > 0 ? window.scrollY / height : 0})`;
-      }
       emitScrollFrame();
     };
     const scheduleScrollUpdate = () => {
@@ -682,7 +674,6 @@ export default function SiteExperience({ route, aboutTeam }: SiteExperienceProps
     <>
       <NoScriptExperienceStyles />
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <div className="scroll-progress" data-scroll-progress aria-hidden="true" />
       <SiteHeader route={route} />
       <main id="main-content" tabIndex={-1}><RoutePage route={route} aboutTeam={aboutTeam} /></main>
       <SiteFooter />

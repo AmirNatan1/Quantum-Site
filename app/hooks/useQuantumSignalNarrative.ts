@@ -282,6 +282,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       const sceneHandoff = normalizeProgress(marker, sceneTiming.handoff.start, sceneTiming.handoff.end);
       let signalProgress = signalProgressForScene(scene, sceneIndex, sceneProgress, sceneHandoff, cache.anchorProgress);
       let carrierLength = 0.028;
+      let signalPhase = scene.mode === "static" || scene.id === "final-conversion" ? "quiet" : "live";
       if (scene.id === "quantum-route") {
         const source = processStages[stageIndex]?.id ?? processStages[0].id;
         const target = processStages[stageIndex + 1]?.id ?? "representative-challenges";
@@ -291,8 +292,13 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         const settled = clamp01((stageProgress - SCENE_PROGRESS.buildEnd) / (SCENE_PROGRESS.settleEnd - SCENE_PROGRESS.buildEnd));
         carrierLength = mix(0.032, 0.008, settled);
         if (stageHandoff > 0) carrierLength = mix(0.008, 0.032, stageHandoff);
+        if (stageProgress >= SCENE_PROGRESS.settleEnd && stageHandoff === 0) signalPhase = "locked";
+      } else if (signalPhase === "live" && sceneProgress >= SCENE_PROGRESS.settleEnd && sceneHandoff === 0) {
+        carrierLength = 0.008;
+        signalPhase = "locked";
       }
       if (root.dataset.activeScene !== scene.id) root.dataset.activeScene = scene.id;
+      if (root.dataset.signalPhase !== signalPhase) root.dataset.signalPhase = signalPhase;
       writeProgress(root, "--signal-carrier-length", carrierLength, force);
       writeProgress(root, "--signal-progress", signalProgress, force);
     };
@@ -430,6 +436,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       window.cancelAnimationFrame(measureFrame);
       root.removeAttribute("data-scene-enhanced");
       root.removeAttribute("data-active-scene");
+      root.removeAttribute("data-signal-phase");
       root.style.removeProperty("--signal-carrier-length");
       root.style.removeProperty("--signal-progress");
       homeSceneContract.forEach((scene) => {

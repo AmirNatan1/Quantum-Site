@@ -89,6 +89,10 @@ async function signalSample(page: Page) {
     progress: Number(getComputedStyle(root).getPropertyValue("--signal-progress")),
     length: Number(getComputedStyle(root).getPropertyValue("--signal-carrier-length")),
     scene: (root as HTMLElement).dataset.activeScene,
+    phase: (root as HTMLElement).dataset.signalPhase,
+    carrierOpacity: getComputedStyle(document.querySelector(".quantum-signal-carrier") as Element).opacity,
+    carrierStroke: getComputedStyle(document.querySelector(".quantum-signal-carrier") as Element).stroke,
+    headOpacity: getComputedStyle(document.querySelector(".quantum-signal-head") as Element).opacity,
     stage: (document.querySelector("#signal-story") as HTMLElement | null)?.dataset.activeStage,
     stageProgress: Number(getComputedStyle(document.querySelector('[data-stage-id="global-scouting"]') as Element).getPropertyValue("--stage-p")),
   }));
@@ -123,18 +127,27 @@ test("capture contracts, dwells without travel, hands forward, and reverses dete
   }
   console.log(`PHASE8_CARRIER ${JSON.stringify(samples)}`);
   expect(samples["0.08"].length).toBeCloseTo(.032, 3);
+  expect(samples["0.08"].phase).toBe("live");
   expect(samples["0.3"].length).toBeCloseTo(.032, 3);
+  expect(samples["0.3"].phase).toBe("live");
   expect(samples["0.59"].length).toBeLessThan(samples["0.3"].length);
   expect(samples["0.72"].length).toBeCloseTo(.008, 3);
+  expect(samples["0.72"].phase).toBe("locked");
+  expect(samples["0.72"].carrierStroke).toBe("rgb(24, 147, 170)");
+  expect(samples["0.72"].headOpacity).toBe("0");
   expect(samples["0.82"].length).toBeCloseTo(samples["0.72"].length, 4);
+  expect(samples["0.82"].phase).toBe("locked");
   expect(samples["0.82"].progress).toBeCloseTo(samples["0.72"].progress, 4);
   expect(samples["0.92"].length).toBeGreaterThan(samples["0.82"].length);
+  expect(samples["0.92"].phase).toBe("live");
+  expect(samples["0.92"].headOpacity).toBe("1");
   expect(samples["0.92"].progress).toBeGreaterThan(samples["0.82"].progress);
   const forward = samples["0.92"];
   await moveStageTo(page, "global-scouting", .30);
   const reverse = await signalSample(page);
   expect(reverse.progress).toBeLessThan(forward.progress);
   expect(reverse.length).toBeCloseTo(.032, 3);
+  expect(reverse.phase).toBe("live");
   const infinite = await page.locator("#signal-story *").evaluateAll((elements) => elements.filter((element) => {
     const style = getComputedStyle(element);
     return style.animationName !== "none" && style.animationIterationCount === "infinite";
@@ -148,6 +161,7 @@ test("quiet chapters suppress live travel and closing conversion resolves to a s
   await page.evaluate(() => document.fonts.ready);
   for (const sceneId of ["representative-challenges", "focus-areas", "evidence-resolution"]) {
     await moveSceneTo(page, sceneId, .5);
+    await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "quiet");
     await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
     await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
   }
@@ -155,29 +169,196 @@ test("quiet chapters suppress live travel and closing conversion resolves to a s
   const entry = await page.locator(".closing-conversion > .shell").evaluate((element) => ({
     rule: getComputedStyle(element, "::before").backgroundColor,
     bracket: getComputedStyle(element, "::after").borderColor,
-    width: getComputedStyle(element, "::after").width,
+    width: parseFloat(getComputedStyle(element, "::after").width) * Math.abs(new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a),
   }));
   await moveSceneTo(page, "final-conversion", .72, false);
   const resolved = await page.locator(".closing-conversion > .shell").evaluate((element) => ({
     rule: getComputedStyle(element, "::before").backgroundColor,
     bracket: getComputedStyle(element, "::after").borderColor,
-    width: getComputedStyle(element, "::after").width,
+    width: parseFloat(getComputedStyle(element, "::after").width) * Math.abs(new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a),
   }));
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
   await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
+  await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "quiet");
   await moveSceneTo(page, "final-conversion", .82, false);
   const dwell = await page.locator(".closing-conversion > .shell").evaluate((element) => ({
     rule: getComputedStyle(element, "::before").backgroundColor,
     bracket: getComputedStyle(element, "::after").borderColor,
-    width: getComputedStyle(element, "::after").width,
+    width: parseFloat(getComputedStyle(element, "::after").width) * Math.abs(new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a),
   }));
   expect(entry.rule).not.toBe(resolved.rule);
   expect(entry.bracket).not.toBe(resolved.bracket);
-  expect(parseFloat(entry.width)).toBeGreaterThan(parseFloat(resolved.width));
+  expect(entry.width).toBeGreaterThan(resolved.width);
   expect(dwell).toEqual(resolved);
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
   await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();
   await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
+});
+
+test("SPARK travel locks locally, hands off live, then yields to the quiet terminal", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  const samples: Record<string, Awaited<ReturnType<typeof signalSample>>> = {};
+  for (const target of [.45, .72, .82, .92]) {
+    await moveSceneTo(page, "spark-test-transition", target);
+    samples[String(target)] = await signalSample(page);
+  }
+  expect(samples["0.45"].phase).toBe("live");
+  expect(samples["0.45"].carrierOpacity).toBe("1");
+  expect(samples["0.45"].headOpacity).toBe("1");
+  for (const target of ["0.72", "0.82"]) {
+    expect(samples[target].phase).toBe("locked");
+    expect(samples[target].length).toBeCloseTo(.008, 3);
+    expect(samples[target].carrierStroke).toBe("rgb(24, 147, 170)");
+    expect(samples[target].headOpacity).toBe("0");
+  }
+  expect(samples["0.82"].progress).toBeCloseTo(samples["0.72"].progress, 4);
+  expect(samples["0.92"].phase).toBe("live");
+  expect(samples["0.92"].progress).toBeGreaterThan(samples["0.82"].progress);
+  expect(samples["0.92"].headOpacity).toBe("1");
+  await moveSceneTo(page, "spark-test-transition", .45);
+  const reverse = await signalSample(page);
+  expect(reverse.phase).toBe("live");
+  expect(reverse.progress).toBeLessThan(samples["0.92"].progress);
+  await moveSceneTo(page, "final-conversion", .72, false);
+  await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "quiet");
+  await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
+  await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
+});
+
+test("Signal visibility fails closed for missing, empty, stale, and unknown phase values", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  const root = page.locator(".home-narrative");
+  await expect(root).toHaveAttribute("data-scene-enhanced", "");
+  for (const phase of [null, "", "stale", "unknown"]) {
+    await root.evaluate((element, value) => {
+      if (value === null) element.removeAttribute("data-signal-phase");
+      else element.setAttribute("data-signal-phase", value);
+    }, phase);
+    await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
+    await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
+  }
+});
+
+test("sticky Signal ownership retains the established viewport boundary", async ({ page }) => {
+  for (const viewport of [
+    { width: 1100, height: 700, sticky: false },
+    { width: 1101, height: 700, sticky: true },
+    { width: 1101, height: 699, sticky: false },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.locator(".signal-story-intro").evaluate((element) => getComputedStyle(element).position)).toBe(viewport.sticky ? "sticky" : "static");
+  }
+  await page.setViewportSize({ width: 1101, height: 700 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  expect(await page.locator(".signal-story-intro").evaluate((element) => getComputedStyle(element).position)).not.toBe("sticky");
+});
+
+test("shared navigation switches before collision and PageHero geometry stays open", async ({ page }, testInfo) => {
+  for (const width of [890, 959, 960, 961, 1100]) {
+    await page.setViewportSize({ width, height: 700 });
+    await page.goto("/for-partners");
+    await page.evaluate(() => document.fonts.ready);
+    const compact = width < 960;
+    if (compact) {
+      await expect(page.locator(".menu-toggle")).toBeVisible();
+      await expect(page.locator(".site-nav")).toBeHidden();
+    } else {
+      await expect(page.locator(".menu-toggle")).toBeHidden();
+      await expect(page.locator(".site-nav")).toBeVisible();
+      const lines = await page.locator(".site-nav > a").evaluateAll((links) => links.map((link) => ({
+        rects: link.getClientRects().length,
+        whiteSpace: getComputedStyle(link).whiteSpace,
+      })));
+      expect(lines.every(({ rects, whiteSpace }) => rects === 1 && whiteSpace === "nowrap")).toBe(true);
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/spark");
+  const sparkLink = page.locator(".site-nav .nav-spark");
+  await expect(sparkLink).toBeVisible();
+  const activeSpark = await sparkLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const marker = getComputedStyle(element, "::after");
+    return { color: style.color, background: style.backgroundColor, marker: marker.height };
+  });
+  expect(activeSpark.color).not.toBe(activeSpark.background);
+  expect(parseFloat(activeSpark.marker)).toBeGreaterThanOrEqual(1);
+  await sparkLink.focus();
+  expect(await sparkLink.evaluate((element) => element.matches(":focus-visible"))).toBe(true);
+  expect(parseFloat(await sparkLink.evaluate((element) => getComputedStyle(element).outlineWidth))).toBeGreaterThanOrEqual(3);
+
+  await page.setViewportSize({ width: 890, height: 700 });
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await expect(sparkLink).toBeVisible();
+  expect(await sparkLink.evaluate((element) => getComputedStyle(element).color)).not.toBe(await sparkLink.evaluate((element) => getComputedStyle(element).backgroundColor));
+  if (testInfo.project.name === "chromium") {
+    await page.emulateMedia({ forcedColors: "active" });
+    await expect(sparkLink).toBeVisible();
+    expect(await sparkLink.evaluate((element) => getComputedStyle(element).color)).not.toBe(await sparkLink.evaluate((element) => getComputedStyle(element).backgroundColor));
+    await page.emulateMedia({ forcedColors: "none" });
+  }
+
+  await expect(page.locator(".scroll-progress, .page-orbit")).toHaveCount(0);
+  const registration = await page.locator(".page-hero").evaluate((element) => {
+    const style = getComputedStyle(element, "::before");
+    return {
+      top: style.borderTopStyle,
+      right: style.borderRightStyle,
+      bottom: style.borderBottomStyle,
+      left: style.borderLeftStyle,
+    };
+  });
+  expect(registration).toEqual({ top: "solid", right: "solid", bottom: "none", left: "none" });
+});
+
+test("shared PageHero routes reflow at increased text without document overflow", async ({ page }) => {
+  const routes = ["/about", "/for-partners", "/for-startups", "/spark", "/industries", "/pocs", "/case-studies", "/updates", "/contact", "/spark-register"];
+  for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 800 }]) {
+    await page.setViewportSize(viewport);
+    for (const route of routes) {
+      await page.goto(route);
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = "200%";
+      });
+      await page.evaluate(() => document.fonts.ready);
+      const geometry = await page.evaluate(() => ({
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        heading: document.querySelector(".page-hero h1")?.getBoundingClientRect(),
+        viewport: document.documentElement.clientWidth,
+      }));
+      expect(geometry.overflow, `${route} at ${viewport.width}px`).toBeLessThanOrEqual(1);
+      expect(geometry.heading?.left ?? -1).toBeGreaterThanOrEqual(0);
+      expect(geometry.heading?.right ?? viewport.width + 1).toBeLessThanOrEqual(geometry.viewport + 1);
+    }
+  }
+});
+
+test("header and shared PageHero scrolling retain zero layout shift", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as Window & { __phase8Cls?: number }).__phase8Cls = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as Array<PerformanceEntry & { value: number; hadRecentInput: boolean }>) {
+        if (!entry.hadRecentInput) (window as Window & { __phase8Cls?: number }).__phase8Cls! += entry.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    scrollTo(0, document.documentElement.scrollHeight - innerHeight);
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    scrollTo(0, 0);
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+  });
+  expect(await page.evaluate(() => (window as Window & { __phase8Cls?: number }).__phase8Cls ?? 0)).toBe(0);
 });
 
 test("responsive, increased-text, reduced-motion, and forced-color presentations remain complete", async ({ page }, testInfo) => {
@@ -250,5 +431,11 @@ test.describe("Phase 8 without JavaScript", () => {
     }).length);
     expect(hidden).toBe(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+
+    await page.setViewportSize({ width: 890, height: 700 });
+    await page.goto("/for-partners");
+    await expect(page.locator(".menu-toggle")).toBeHidden();
+    await expect(page.locator(".site-nav")).toBeVisible();
+    await expect(page.locator(".site-nav > a")).toHaveCount(7);
   });
 });

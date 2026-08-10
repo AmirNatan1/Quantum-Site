@@ -28,6 +28,8 @@ test("Phase 8 keeps one sixteen-anchor Signal and replaces the historical stroke
   assert.equal((hook.match(/addEventListener\(SCROLL_FRAME_EVENT/g) ?? []).length, 1);
   assert.doesNotMatch(hook, /addEventListener\(["']scroll["']/);
   assert.equal((site.match(/addEventListener\(["']scroll["']/g) ?? []).length, 1);
+  assert.equal((hook.match(/new ResizeObserver/g) ?? []).length, 1);
+  assert.equal((hook.match(/new IntersectionObserver/g) ?? []).length, 1);
 });
 
 test("Phase 8 re-composes existing hero, stage, and terminal surfaces without new content or motion systems", async () => {
@@ -51,16 +53,35 @@ test("Phase 8 re-composes existing hero, stage, and terminal surfaces without ne
   assert.match(closing, /href="\/for-partners"/);
   assert.match(closing, /href="\/for-startups"/);
   assert.doesNotMatch(styles, /@keyframes|animation-(?:duration|iteration-count)/);
+  assert.doesNotMatch(site + globals, /scroll-progress|data-scroll-progress/);
+  assert.doesNotMatch(site + globals, /page-orbit|orbitDot/);
+  assert.match(globals, /\.page-hero::before\s*{[^}]*border-top:[^}]*border-right:/);
+  assert.doesNotMatch(globals, /\.page-hero::before\s*{[^}]*border-bottom:/);
+  assert.match(globals, /@media \(max-width: 959px\)[\s\S]*\.menu-toggle[^}]*display:\s*block/);
+  assert.match(globals, /\.site-nav\s*>\s*a\s*{[^}]*white-space:\s*nowrap/);
+  assert.match(globals, /\.site-header\.is-over-dark[^}]*\.brand-link::before[^}]*background:\s*var\(--white\)/);
+  assert.match(globals, /\.site-nav\s+a\.nav-spark\s*{[^}]*color:\s*var\(--white\)/);
+  assert.match(globals, /\.site-nav\s*>\s*a:not\(\.nav-spark\)::after[^}]*display:\s*none/);
   for (const dependency of ["gsap", "lenis", "three", "framer-motion", "lottie"]) {
     assert.doesNotMatch(manifest, new RegExp(`"${dependency}"`, "i"));
   }
 });
 
 test("quiet chapters, reduced motion, no-JavaScript, and forced colors retain distinct static Signal states", async () => {
-  const styles = await read("../app/styles/signal.css");
-  for (const scene of ["representative-challenges", "focus-areas", "evidence-resolution", "final-conversion"]) {
-    assert.match(styles, new RegExp(`data-active-scene="${scene}"`));
-  }
+  const [styles, hook] = await Promise.all([
+    read("../app/styles/signal.css"),
+    read("../app/hooks/useQuantumSignalNarrative.ts"),
+  ]);
+  assert.match(styles, /\.quantum-signal-carrier[^}]*opacity:\s*0/);
+  assert.match(styles, /\.quantum-signal-head[^}]*opacity:\s*0/);
+  assert.match(styles, /data-signal-phase="live"[^}]*\.quantum-signal-head/);
+  assert.match(styles, /data-signal-phase="locked"[^}]*\.quantum-signal-carrier/);
+  assert.doesNotMatch(styles, /data-signal-phase="locked"[^}]*\.quantum-signal-head[^}]*opacity:\s*1/);
+  assert.doesNotMatch(styles, /data-active-scene=/);
+  assert.match(hook, /scene\.mode === "static" \|\| scene\.id === "final-conversion" \? "quiet" : "live"/);
+  assert.match(hook, /signalPhase = "locked"/);
+  assert.match(hook, /root\.dataset\.signalPhase !== signalPhase/);
+  assert.match(hook, /removeAttribute\("data-signal-phase"\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.quantum-signal-carrier, \.quantum-signal-head\s*{\s*display:\s*none;/);
   assert.match(styles, /html:not\(\.js-ready\) \.signal-panel/);
   assert.match(styles, /\.quantum-signal-fallback/);
