@@ -13,10 +13,10 @@ import {
   sparkStatus,
 } from "./data";
 import { AccentHeadingText } from "./components/brand/AccentHeadingText";
-import { AlignmentScene } from "./components/home/AlignmentScene";
-import { AudienceSelector } from "./components/home/AudienceSelector";
 import { ClosingConversion } from "./components/home/ClosingConversion";
-import { ConsortiumChapter } from "./components/home/ConsortiumChapter";
+import { ConvergenceChamber } from "./components/home/ConvergenceChamber";
+import { InspectionFieldHero } from "./components/home/InspectionFieldHero";
+import { ProblemFramingChamber } from "./components/home/ProblemFramingChamber";
 import { ProcessStory } from "./components/home/ProcessStory";
 import { ChallengeDecisionInstrument } from "./components/needs/ChallengeDecisionInstrument";
 import { NeedsBoard } from "./components/needs/NeedsBoard";
@@ -31,9 +31,8 @@ type RouteProps = { route: string };
 type SiteExperienceProps = RouteProps & { aboutTeam?: ReactNode };
 
 const noScriptStyles = `
-  .need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"],.audience-selector input{display:none!important}
+  .need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"]{display:none!important}
   .sector-interface{margin:0!important;border:0!important;display:block!important}
-  .audience-selector label{cursor:default!important}
   @media(max-width:959px){
     .site-header{position:static!important;height:auto!important;background:#fff!important;border-color:#e7ebec!important}
     .header-inner{min-height:68px;height:auto!important;flex-wrap:wrap}
@@ -421,32 +420,9 @@ function HomePage() {
   return (
     <div className="home-narrative" ref={narrativeRef}>
       <SignalPath geometry={geometry} />
-      <section
-        className="home-hero"
-        data-scene-id="hero"
-        data-scene-mode="light"
-        data-signal-anchor="hero-origin"
-        data-signal-order="1"
-        data-signal-lane="end"
-      >
-        <i className="scene-signal-port" data-signal-port aria-hidden="true" />
-        <div className="hero-safe-visual" data-scene-part="origin" data-scene-visual aria-hidden="true"><span /><span /><span /><i /></div>
-        <div className="shell hero-grid">
-          <div className="hero-copy" data-reveal="block">
-            <Eyebrow>An industrial consortium</Eyebrow>
-            <h1 aria-label="Prove it where it has to work"><span><TitleText text="Prove it" accentI /></span>{" "}<span><TitleText text="where it has" accentI /></span>{" "}<span><TitleText text="to work" /></span></h1>
-            <p>Quantum Hub connects operational needs inside major industrial groups with technology that is ready to be tested. We frame the need, find the technology, design the test, run it in the environment where it has to perform, and hand both sides evidence they can decide on.</p>
-            <div className="hero-actions">
-              <Action href="/for-partners">Bring an operational need</Action>
-              <Action href="/for-startups" secondary inverse>I have technology to test</Action>
-            </div>
-          </div>
-        </div>
-        <div className="hero-note shell"><span>Scroll to see the method</span><i /></div>
-      </section>
-      <ConsortiumChapter />
-      <AudienceSelector />
-      <AlignmentScene />
+      <InspectionFieldHero />
+      <ProblemFramingChamber />
+      <ConvergenceChamber />
       <ProcessStory />
       <div
         className="narrative-anchor-wrapper"

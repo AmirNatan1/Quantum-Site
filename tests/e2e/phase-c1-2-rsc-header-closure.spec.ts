@@ -83,7 +83,7 @@ test("Pages RSC artifacts support root and named client navigation, focus, Back,
   await page.locator('.brand-link[href="/"]').click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("main#main-content")).toBeFocused();
-  await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work." })).toBeVisible();
 
   await clickPrimaryRoute(page, "/about");
   await page.goBack();

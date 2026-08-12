@@ -67,6 +67,12 @@ const EMPTY_CACHE: NarrativeCache = {
 };
 const STAGE_IDS = processStages.map((stage) => stage.id);
 const STAGE_ID_SET = new Set<StageId>(STAGE_IDS);
+const D1_LOCKED_EXIT_SCENES: ReadonlySet<HomeSceneId> = new Set([
+  "hero",
+  "consortium",
+  "audience",
+  "operating-model",
+]);
 const WRITE_EPSILON = 0.0025;
 
 type Cubic = {
@@ -202,6 +208,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
     homeSceneContract.forEach((scene) => {
       const sceneElement = sceneElements.get(scene.id);
       if (!sceneElement) return;
+      sceneElement.toggleAttribute("data-d1-clamp-eligible", D1_LOCKED_EXIT_SCENES.has(scene.id));
       const declared = Array.from(sceneElement.querySelectorAll<HTMLElement>("[data-scene-visual]"));
       if (sceneElement.hasAttribute("data-scene-visual")) declared.unshift(sceneElement);
       sceneVisuals.set(scene.id, declared.length > 0 ? declared : [sceneElement]);
@@ -296,6 +303,9 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       } else if (signalPhase === "live" && sceneProgress >= SCENE_PROGRESS.settleEnd && sceneHandoff === 0) {
         carrierLength = 0.008;
         signalPhase = "locked";
+      }
+      if (signalPhase === "locked" && D1_LOCKED_EXIT_SCENES.has(scene.id)) {
+        signalProgress = cache.anchorProgress.get(scene.exitAnchor) ?? signalProgress;
       }
       if (root.dataset.activeScene !== scene.id) root.dataset.activeScene = scene.id;
       if (root.dataset.signalPhase !== signalPhase) root.dataset.signalPhase = signalPhase;
@@ -443,6 +453,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         const element = sceneElements.get(scene.id);
         element?.style.removeProperty("--scene-p");
         element?.removeAttribute("data-scene-state");
+        element?.removeAttribute("data-d1-clamp-eligible");
       });
       stageElements.forEach((element) => {
         element.style.removeProperty("--stage-p");

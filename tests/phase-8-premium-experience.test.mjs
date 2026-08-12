@@ -32,19 +32,25 @@ test("Phase 8 keeps one sixteen-anchor Signal and replaces the historical stroke
   assert.equal((hook.match(/new IntersectionObserver/g) ?? []).length, 1);
 });
 
-test("Phase 8 re-composes existing hero, stage, and terminal surfaces without new content or motion systems", async () => {
-  const [site, styles, globals, closing, manifest] = await Promise.all([
+test("D1 replaces the opening while keeping the accepted stage and terminal systems", async () => {
+  const [site, styles, globals, closing, manifest, hero, framing, convergence] = await Promise.all([
     read("../app/SiteExperience.tsx"),
     read("../app/styles/signal.css"),
     read("../app/globals.css"),
     read("../app/components/home/ClosingConversion.tsx"),
     read("../package.json"),
+    read("../app/components/home/InspectionFieldHero.tsx"),
+    read("../app/components/home/ProblemFramingChamber.tsx"),
+    read("../app/components/home/ConvergenceChamber.tsx"),
   ]);
-  assert.match(site, /aria-label="Prove it where it has to work"/);
-  for (const text of ["Prove it", "where it has", "to work"]) assert.match(site, new RegExp(`text="${text}"`));
-  assert.match(globals, /\.hero-safe-visual::before/);
-  assert.match(globals, /\.hero-safe-visual::after/);
-  assert.doesNotMatch(globals, /\.hero-safe-visual[^}]*border-radius:\s*50%/);
+  assert.match(site, /<InspectionFieldHero/);
+  assert.match(hero, /aria-label="Prove it where it has to work\."/);
+  for (const text of ["Prove it", "where it has", "to work"]) assert.match(hero, new RegExp(`<span>${text}<\\/span>`));
+  assert.match(styles, /\.inspection-field::before/);
+  assert.match(styles, /\.inspection-field__substrate/);
+  assert.match(framing, /className="framing-apparatus"/);
+  assert.match(convergence, /className="convergence-cell"/);
+  assert.doesNotMatch(site + styles + globals, /hero-safe-visual|audience-selector|alignment-figure/);
   assert.match(styles, /--stage-carrier/);
   assert.match(styles, /\.signal-stage-diagram::before, \.signal-stage-diagram::after/);
   assert.match(styles, /var\(--stage-handoff\) \* -4px/);
@@ -87,4 +93,25 @@ test("quiet chapters, reduced motion, no-JavaScript, and forced colors retain di
   assert.match(styles, /\.quantum-signal-fallback/);
   assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.quantum-signal-carrier/);
   assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.closing-conversion > \.shell::before/);
+});
+
+test("the sticky Signal boundary waits for enhanced homepage readiness before measuring position", async () => {
+  const source = await read("./e2e/phase-8-signature-experience.spec.ts");
+  const start = source.indexOf('test("sticky Signal ownership retains the established viewport boundary"');
+  const end = source.indexOf('test("shared navigation switches before collision', start);
+  assert.ok(start >= 0 && end > start, "sticky boundary test block is present");
+  const block = source.slice(start, end);
+
+  for (const viewport of [
+    '{ width: 1100, height: 700, sticky: false }',
+    '{ width: 1101, height: 700, sticky: true }',
+    '{ width: 1101, height: 699, sticky: false }',
+  ]) assert.ok(block.includes(viewport), `${viewport} remains in the boundary matrix`);
+
+  assert.ok(block.includes('page.locator("html")).toHaveClass(/(?:^|\\s)js-ready(?:\\s|$)/)'));
+  assert.ok(block.includes('page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "")'));
+  assert.ok(block.indexOf('toHaveClass(/(?:^|\\s)js-ready') < block.indexOf('position: getComputedStyle(element).position'));
+  assert.ok(block.indexOf('toHaveAttribute("data-scene-enhanced", "")') < block.indexOf('position: getComputedStyle(element).position'));
+  assert.match(block, /setViewportSize\(\{ width: 1101, height: 700 \}\)[\s\S]*emulateMedia\(\{ reducedMotion: "reduce" \}\)/);
+  assert.match(block, /noPreference:\s*false,[\s\S]*reduce:\s*true,[\s\S]*position:\s*"relative"/);
 });

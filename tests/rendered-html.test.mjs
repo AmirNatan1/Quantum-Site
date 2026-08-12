@@ -44,7 +44,8 @@ test("server-renders the publication-safe Quantum Hub homepage", async () => {
   const html = await response.text();
   assert.match(html, /<title>Quantum Hub \| Field-tested evidence for industrial technology<\/title>/i);
   assert.match(html, /Prove it where it has to work/i);
-  assert.match(html, /hero-safe-visual/);
+  assert.match(html, /data-inspection-hero/);
+  assert.match(html, /aria-label="Prove it where it has to work\."/);
   assert.match(html, /A written answer, against criteria agreed in advance/i);
   assert.match(html, /Representative challenge:/i);
   assert.match(html, /data-challenge-instrument/i);
@@ -129,7 +130,7 @@ test("internal navigation carries no unused intent query strings", async () => {
 test("partner presentation is names-only", async () => {
   const response = await render();
   const html = await response.text();
-  for (const partner of ["Taavura", "Talcar", "VDL", "Hyundai", "Bazan"]) {
+  for (const partner of ["Taavura–Livnat", "Talcar", "VDL", "Hyundai", "Bazan"]) {
     assert.match(html, new RegExp(`>${partner}<`, "i"), partner);
   }
   assert.match(html, /consortium-wordmark/);

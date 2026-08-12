@@ -143,13 +143,13 @@ test("descender glyphs retain clipping allowance through reveal states and respo
   }
 });
 
-test("homepage heading accents are explicit and limited to three priority headings", async ({ page }) => {
+test("homepage heading accents are explicit and limited to two priority headings", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work." })).toBeVisible();
   const accentedHeadings = await page.locator("h1, h2, h3").evaluateAll((headings) => headings
     .filter((heading) => heading.querySelector(".title-i"))
     .map((heading) => heading.getAttribute("aria-label") ?? heading.querySelector(".sr-only")?.textContent ?? ""));
   expect(accentedHeadings).toEqual([
-    "Prove it where it has to work",
     "We match technology to need — and we build the test ourselves",
     "Five stages, from need to decision",
   ]);
@@ -157,16 +157,22 @@ test("homepage heading accents are explicit and limited to three priority headin
   await expect(page.locator(".closing-conversion h2 .title-i")).toHaveCount(0);
 });
 
-test("block reveals use one-shot state and unitless sequencing", async ({ page }) => {
+test("problem-framing rails use deterministic scene sequencing", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 700 });
   await page.goto("/");
 
-  const tiles = page.locator('.consortium-evidence-grid [data-reveal="block"]');
-  await expect(tiles).toHaveCount(3);
-  await expect(tiles.nth(1)).toHaveCSS("--reveal-index", "1");
-  await expect.poll(() => tiles.last().getAttribute("data-reveal-state")).toMatch(/prepared|visible/);
-  await tiles.last().scrollIntoViewIfNeeded();
-  await expect(tiles.last()).toHaveAttribute("data-reveal-state", "visible");
+  const scene = page.locator('[data-scene-id="consortium"]');
+  const rails = scene.locator(".framing-rail");
+  await expect(rails).toHaveCount(3);
+  await scene.scrollIntoViewIfNeeded();
+  await expect.poll(() => scene.evaluate((element) =>
+    Number(getComputedStyle(element).getPropertyValue("--scene-p")),
+  )).toBeGreaterThan(0);
+  const progress = await rails.evaluateAll((elements) => elements.map((element) =>
+    Number(getComputedStyle(element).opacity),
+  ));
+  expect(progress[0]).toBeGreaterThanOrEqual(progress[1]);
+  expect(progress[1]).toBeGreaterThanOrEqual(progress[2]);
 });
 
 test("font request failure leaves headings visible and measurable", async ({ page }) => {
@@ -199,7 +205,8 @@ test("reduced motion resolves reveal and ambient motion to final content", async
   await expect(page.locator(".quantum-signal-track")).toHaveCSS("stroke-width", "1px");
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("display", "none");
   await expect(page.locator(".quantum-signal-head")).toHaveCSS("display", "none");
-  await expect(page.locator(".hero-safe-visual > span").first()).toHaveCSS("animation-name", "none");
+  await expect(page.locator(".inspection-field__substrate")).toHaveCSS("animation-name", "none");
+  await expect(page.locator(".inspection-field__substrate")).toHaveCSS("mask-image", "none");
   await expect(page.locator(".scan-line")).toHaveCSS("animation-name", "none");
 });
 

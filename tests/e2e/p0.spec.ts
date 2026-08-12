@@ -148,8 +148,12 @@ test("reduced motion keeps decorative motion optional", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator("video")).toHaveCount(0);
-  const animation = await page.locator(".hero-safe-visual > span").first().evaluate((element) => getComputedStyle(element).animationName);
-  expect(animation).toBe("none");
+  const inspection = await page.locator(".inspection-field__substrate").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { animation: style.animationName, mask: style.maskImage };
+  });
+  expect(inspection.animation).toBe("none");
+  expect(inspection.mask).toBe("none");
 });
 
 test("forms fail closed and expose no submission controls", async ({ page }) => {

@@ -313,8 +313,8 @@ test.describe("without JavaScript", () => {
     }
 
     await page.goto("/");
-    await expect(page.locator(".audience-selector input").first()).toBeHidden();
-    await expect(page.locator(".audience-selector article")).toHaveCount(2);
+    await expect(page.locator(".convergence-routes input").first()).toBeVisible();
+    await expect(page.locator(".convergence-routes article")).toHaveCount(2);
     await expect(page.locator(".sector-tabs")).toBeHidden();
     await expect(page.locator(".sector-display")).toBeHidden();
     await expect(page.locator(".sector-static-fallback .plain-card")).toHaveCount(4);

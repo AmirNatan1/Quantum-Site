@@ -328,31 +328,19 @@ test("THE MODEL completes visibly with a resolved dwell at every required viewpo
     expect(await sceneVisualIntersection(page, "operating-model"), `resolved intersection at ${viewport.width}x${viewport.height}`).toBeGreaterThan(1);
     const completion = await scene.evaluate((element) => ({
       progress: Number(getComputedStyle(element).getPropertyValue("--scene-p")),
-      inputs: element.querySelectorAll(".alignment-inputs li").length,
-      outputs: element.querySelectorAll(".alignment-connector-output").length,
-      inputCompletion: matchMedia("(max-width: 560px)").matches
-        ? Array.from(element.querySelectorAll(".alignment-inputs li:not(:last-child)"), (item) => new DOMMatrix(getComputedStyle(item, "::after").transform).d)
-        : Array.from(element.querySelectorAll(".alignment-connector-input"), (item) => new DOMMatrix(getComputedStyle(item).transform).a),
-      outputCompletion: [
-        ...Array.from(element.querySelectorAll(".alignment-connector-output"), (item) => new DOMMatrix(getComputedStyle(item).transform).a),
-        ...(matchMedia("(max-width: 560px)").matches
-          ? Array.from(element.querySelectorAll(".alignment-outputs li"), (item) => new DOMMatrix(getComputedStyle(item, "::before").transform).d)
-          : []),
-      ],
-      frameScale: new DOMMatrix(getComputedStyle(element.querySelector(".alignment-figure") as Element).transform).a,
-      frameRect: (() => {
-        const rect = element.querySelector(".alignment-figure")!.getBoundingClientRect();
-        return { top: rect.top, bottom: rect.bottom, viewport: innerHeight };
-      })(),
+      planes: element.querySelectorAll(".convergence-plane").length,
+      translations: Array.from(element.querySelectorAll(".convergence-plane"), (item) => {
+        const matrix = new DOMMatrix(getComputedStyle(item).transform);
+        return Math.max(Math.abs(matrix.m41), Math.abs(matrix.m42), Math.abs(matrix.m43));
+      }),
+      lockOpacity: Number(getComputedStyle(element.querySelector(".convergence-cell__lock") as Element).opacity),
+      lockBorder: getComputedStyle(element.querySelector(".convergence-cell__lock") as Element).borderColor,
     }));
     expect(completion.progress).toBeGreaterThanOrEqual(0.64);
-    expect(completion.inputs).toBe(5);
-    expect(completion.outputs).toBe(2);
-    expect(completion.inputCompletion.every((value) => value >= 0.995)).toBe(true);
-    expect(completion.outputCompletion.every((value) => value >= 0.995)).toBe(true);
-    expect(completion.frameScale).toBeGreaterThanOrEqual(0.999);
-    expect(completion.frameRect.top).toBeGreaterThanOrEqual(0);
-    expect(completion.frameRect.bottom).toBeLessThanOrEqual(completion.frameRect.viewport);
+    expect(completion.planes).toBe(3);
+    expect(completion.translations.every((value) => value <= 0.5)).toBe(true);
+    expect(completion.lockOpacity).toBeGreaterThanOrEqual(0.99);
+    expect(completion.lockBorder).toBe("rgb(24, 147, 170)");
     const geometry = await sceneVisualGeometry(page, "operating-model");
     console.log(`PHASE31_MODEL_TIMING ${viewport.width}x${viewport.height} ${JSON.stringify(geometry)}`);
     expect(geometry.centerRatio, `resolved center at ${viewport.width}x${viewport.height}`).toBeGreaterThanOrEqual(0.5);
@@ -519,7 +507,8 @@ test("reduced motion and forced colors keep resolved compositions legible", asyn
     Number(getComputedStyle(element).getPropertyValue("--scene-p")) === 1
       && (element as HTMLElement).dataset.sceneState === "resolved",
   ))).toBe(true);
-  await expect(page.locator(".alignment-connectors")).toBeVisible();
+  await expect(page.locator(".convergence-cell")).toBeVisible();
+  await expect(page.locator(".convergence-plane")).toHaveCount(3);
   await expect(page.locator("[data-signal-stage]")).toHaveCount(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -528,14 +517,14 @@ test("reduced motion and forced colors keep resolved compositions legible", asyn
   expect(await page.evaluate(() => matchMedia("(forced-colors: active)").matches)).toBe(true);
   await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
   await expect(page.locator(".quantum-signal-track")).toBeAttached();
-  await expect(page.locator(".alignment-connector-spine")).toBeAttached();
+  await expect(page.locator(".convergence-cell__axis")).toBeAttached();
   const forced = await page.evaluate(() => {
     const signal = getComputedStyle(document.querySelector(".quantum-signal-track") as Element);
-    const connector = getComputedStyle(document.querySelector(".alignment-connector-spine") as Element);
-    return { signalStroke: signal.stroke, connectorBorder: connector.borderLeftColor };
+    const cell = getComputedStyle(document.querySelector(".convergence-cell") as Element);
+    return { signalStroke: signal.stroke, cellBorder: cell.borderColor };
   });
   expect(forced.signalStroke).not.toBe("none");
-  expect(forced.connectorBorder).not.toBe("transparent");
+  expect(forced.cellBorder).not.toBe("transparent");
   await expect(page.locator("[data-signal-stage]")).toHaveCount(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

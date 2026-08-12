@@ -15,6 +15,146 @@ const focusAreaViewports = [
   { width: 320, height: 800 },
 ] as const;
 
+type ConvergenceState = "progression" | "resolved";
+
+async function moveOperatingModelTo(page: Page, targetProgress: number) {
+  await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
+  await page.evaluate(async (progress) => {
+    const markerLine = .52;
+    const entryLine = .88;
+    const localExit = innerWidth <= 560 ? .48 : .465;
+    const scene = document.querySelector<HTMLElement>('[data-scene-id="operating-model"]');
+    if (!scene) throw new Error("Missing operating-model scene");
+
+    const layoutTop = (element: HTMLElement) => {
+      let top = 0;
+      let current: HTMLElement | null = element;
+      while (current) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      return top;
+    };
+    const visuals = scene.hasAttribute("data-scene-visual")
+      ? [scene]
+      : Array.from(scene.querySelectorAll<HTMLElement>("[data-scene-visual]"));
+    const measured = visuals.length > 0 ? visuals : [scene];
+    const bounds = measured.reduce((result, element) => {
+      const top = layoutTop(element);
+      return {
+        top: Math.min(result.top, top),
+        bottom: Math.max(result.bottom, top + element.offsetHeight),
+      };
+    }, { top: Number.POSITIVE_INFINITY, bottom: Number.NEGATIVE_INFINITY });
+    const start = bounds.top + (markerLine - entryLine) * innerHeight;
+    const end = bounds.bottom + (markerLine - localExit) * innerHeight;
+    const previousBehavior = document.documentElement.style.scrollBehavior;
+
+    document.documentElement.style.scrollBehavior = "auto";
+    scrollTo({ top: start + (end - start) * progress - innerHeight * markerLine, behavior: "auto" });
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    dispatchEvent(new Event("quantum-hub:scroll-frame"));
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    document.documentElement.style.scrollBehavior = previousBehavior;
+  }, targetProgress);
+}
+
+async function expectOperatingModelState(
+  page: Page,
+  width: number,
+  targetProgress: number,
+  sceneState: ConvergenceState,
+  signalPhase: "live" | "locked",
+) {
+  const scene = page.locator('[data-scene-id="operating-model"]');
+  const root = page.locator(".home-narrative");
+  const context = `${width}px ${sceneState}`;
+
+  await expect(root, `${context} active scene`).toHaveAttribute("data-active-scene", "operating-model");
+  await expect.poll(
+    () => scene.evaluate((element) => Number(getComputedStyle(element).getPropertyValue("--scene-p"))),
+    { message: `${context} minimum scene progress` },
+  ).toBeGreaterThanOrEqual(targetProgress - .01);
+  await expect.poll(
+    () => scene.evaluate((element) => Number(getComputedStyle(element).getPropertyValue("--scene-p"))),
+    { message: `${context} maximum scene progress` },
+  ).toBeLessThanOrEqual(targetProgress + .01);
+  await expect(scene, `${context} scene state`).toHaveAttribute("data-scene-state", sceneState);
+  await expect(root, `${context} Signal phase`).toHaveAttribute("data-signal-phase", signalPhase);
+
+  return page.evaluate(() => {
+    const narrative = document.querySelector<HTMLElement>(".home-narrative");
+    const operatingModel = document.querySelector<HTMLElement>('[data-scene-id="operating-model"]');
+    return {
+      scrollY,
+      activeScene: narrative?.dataset.activeScene ?? null,
+      sceneProgress: operatingModel
+        ? Number(getComputedStyle(operatingModel).getPropertyValue("--scene-p"))
+        : null,
+      sceneState: operatingModel?.dataset.sceneState ?? null,
+      signalPhase: narrative?.dataset.signalPhase ?? null,
+    };
+  });
+}
+
+async function measureConvergenceGeometry(page: Page) {
+  return page.evaluate(() => {
+    const selectors = {
+      cell: ".convergence-cell",
+      need: ".convergence-plane--need",
+      technology: ".convergence-plane--technology",
+      environment: ".convergence-plane--environment",
+      lock: ".convergence-cell__lock",
+    } as const;
+    const elements = Object.fromEntries(Object.entries(selectors).map(([name, selector]) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing convergence ${name} element`);
+      return [name, element];
+    })) as Record<keyof typeof selectors, HTMLElement>;
+    const rectangle = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      };
+    };
+    const rectangles = Object.fromEntries(Object.entries(elements).map(([name, element]) => [name, rectangle(element)])) as
+      Record<keyof typeof selectors, ReturnType<typeof rectangle>>;
+    const tolerance = matchMedia("(max-width: 560px)").matches ? 1 : 130;
+    const cell = rectangles.cell;
+    const diagnostics = Object.fromEntries(Object.entries(rectangles).map(([name, rect]) => {
+      const leftDelta = rect.left - (cell.left - tolerance);
+      const rightDelta = cell.right + tolerance - rect.right;
+      const topDelta = rect.top - (cell.top - tolerance);
+      const bottomDelta = cell.bottom + tolerance - rect.bottom;
+      const intersectionWidth = Math.max(0, Math.min(rect.right, cell.right) - Math.max(rect.left, cell.left));
+      const intersectionHeight = Math.max(0, Math.min(rect.bottom, cell.bottom) - Math.max(rect.top, cell.top));
+      return [name, {
+        rect,
+        leftDelta,
+        rightDelta,
+        topDelta,
+        bottomDelta,
+        passes: leftDelta >= 0 && rightDelta >= 0 && topDelta >= 0 && bottomDelta >= 0,
+        intersectionWidth,
+        intersectionHeight,
+        intersectsCell: intersectionWidth > 0 && intersectionHeight > 0,
+      }];
+    }));
+
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      tolerance,
+      rectangles,
+      diagnostics,
+    };
+  });
+}
+
 async function expectFocusAreaNodeClear(page: Page, context: string) {
   const geometry = await page.locator('[data-scene-id="focus-areas"]').evaluate(async (scene) => {
     const tabs = Array.from(scene.querySelectorAll<HTMLButtonElement>(".sector-tabs [role=tab]"));
@@ -154,44 +294,53 @@ test("all five stage diagrams and the three evidence-safe resolutions are presen
   await expect(page.getByText("Illustrative operating model — not a live match.", { exact: true })).toBeVisible();
 });
 
-test("alignment connectors terminate at their semantic boxes across responsive layouts", async ({ page }) => {
+test("convergence planes remain bounded and resolve into one proof cell across responsive layouts", async ({ page }, testInfo) => {
   test.slow();
   for (const width of [360, 390, 890, 1100, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
     const scene = page.locator("#workshop-alignment");
-    await scene.scrollIntoViewIfNeeded();
     await expect(scene.getByText("Illustrative operating model — not a live match.", { exact: true })).toBeVisible();
-    const geometry = await scene.evaluate((element) => {
-      const rect = (selector: string) => element.querySelector(selector)?.getBoundingClientRect();
-      const inputs = Array.from(element.querySelectorAll(".alignment-inputs li"), (item) => item.getBoundingClientRect());
-      const outputs = Array.from(element.querySelectorAll(".alignment-outputs li"), (item) => item.getBoundingClientRect());
-      const connectors = rect(".alignment-connectors");
-      const inputList = rect(".alignment-inputs");
-      const outputList = rect(".alignment-outputs");
-      return {
-        mobile: matchMedia("(max-width: 560px)").matches,
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        connectors: connectors && { left: connectors.left, right: connectors.right, top: connectors.top, bottom: connectors.bottom },
-        inputList: inputList && { right: inputList.right, bottom: inputList.bottom },
-        outputList: outputList && { left: outputList.left, top: outputList.top },
-        inputCenters: inputs.map((item) => item.top + item.height / 2),
-        outputCenters: outputs.map((item) => item.top + item.height / 2),
-      };
-    });
-    expect(geometry.overflow, `${width}px overflow`).toBeLessThanOrEqual(1);
-    expect(geometry.connectors).not.toBeNull();
-    if (geometry.mobile) {
-      expect(Math.abs((geometry.inputList?.bottom ?? 0) - (geometry.connectors?.top ?? 0)), `${width}px input-to-hub`).toBeLessThanOrEqual(1);
-      expect(Math.abs((geometry.connectors?.bottom ?? 0) - (geometry.outputList?.top ?? 0)), `${width}px hub-to-output`).toBeLessThanOrEqual(1);
-    } else {
-      expect(Math.abs((geometry.inputList?.right ?? 0) - (geometry.connectors?.left ?? 0)), `${width}px input boundary`).toBeLessThanOrEqual(1);
-      expect(Math.abs((geometry.connectors?.right ?? 0) - (geometry.outputList?.left ?? 0)), `${width}px output boundary`).toBeLessThanOrEqual(1);
-      const connectorHeight = (geometry.connectors?.bottom ?? 0) - (geometry.connectors?.top ?? 0);
-      geometry.inputCenters.forEach((center, index) => expect(Math.abs(center - ((geometry.connectors?.top ?? 0) + connectorHeight * (.1 + index * .2))), `${width}px input ${index + 1}`).toBeLessThanOrEqual(1.5));
-      geometry.outputCenters.forEach((center, index) => expect(Math.abs(center - ((geometry.connectors?.top ?? 0) + connectorHeight * (.25 + index * .5))), `${width}px output ${index + 1}`).toBeLessThanOrEqual(1.5));
+    await expect(scene.locator(".convergence-plane")).toHaveCount(3);
+    await expect(scene.locator(".convergence-cell__lock")).toHaveCount(1);
+
+    await moveOperatingModelTo(page, .28);
+    const progressionRuntime = await expectOperatingModelState(page, width, .28, "progression", "live");
+    const progression = await measureConvergenceGeometry(page);
+    expect(progression.overflow, `${width}px progression overflow`).toBeLessThanOrEqual(1);
+    for (const name of ["cell", "need", "technology", "environment", "lock"] as const) {
+      expect(progression.rectangles[name].width, `${width}px progression ${name} width`).toBeGreaterThan(0);
+      expect(progression.rectangles[name].height, `${width}px progression ${name} height`).toBeGreaterThan(0);
     }
+    for (const name of ["need", "technology", "environment"] as const) {
+      expect(progression.diagnostics[name].intersectsCell, `${width}px progression ${name} apparatus intersection`).toBe(true);
+    }
+
+    await moveOperatingModelTo(page, .65);
+    const resolvedRuntime = await expectOperatingModelState(page, width, .65, "resolved", "locked");
+    const resolved = await measureConvergenceGeometry(page);
+    expect(resolved.overflow, `${width}px resolved overflow`).toBeLessThanOrEqual(1);
+    for (const name of ["cell", "need", "technology", "environment", "lock"] as const) {
+      expect(resolved.rectangles[name].width, `${width}px resolved ${name} width`).toBeGreaterThan(0);
+      expect(resolved.rectangles[name].height, `${width}px resolved ${name} height`).toBeGreaterThan(0);
+    }
+    for (const name of ["need", "technology", "environment", "lock"] as const) {
+      const diagnostic = resolved.diagnostics[name];
+      expect(diagnostic.leftDelta, `${width}px resolved ${name} left edge`).toBeGreaterThanOrEqual(0);
+      expect(diagnostic.rightDelta, `${width}px resolved ${name} right edge`).toBeGreaterThanOrEqual(0);
+      expect(diagnostic.topDelta, `${width}px resolved ${name} top edge`).toBeGreaterThanOrEqual(0);
+      expect(diagnostic.bottomDelta, `${width}px resolved ${name} bottom edge`).toBeGreaterThanOrEqual(0);
+      expect(diagnostic.passes, `${width}px resolved ${name} bounds`).toBe(true);
+    }
+
+    console.log("PHASE3_CONVERGENCE_GEOMETRY", JSON.stringify({
+      project: testInfo.project.name,
+      repeatEachIndex: testInfo.repeatEachIndex,
+      viewport: { width, height: 900 },
+      progression: { targetProgress: .28, runtime: progressionRuntime, geometry: progression },
+      resolved: { targetProgress: .65, runtime: resolvedRuntime, geometry: resolved },
+    }));
   }
 });
 
@@ -202,7 +351,7 @@ test("keyboard and touch-sized audience controls work without hiding either rout
   await technology.focus();
   await page.keyboard.press("Space");
   await expect(technology).toBeChecked();
-  const sizes = await page.locator(".audience-selector label, .audience-selector > article > a").evaluateAll((elements) => elements.map((element) => {
+  const sizes = await page.locator(".convergence-routes label, .convergence-routes > article > a").evaluateAll((elements) => elements.map((element) => {
     const rect = element.getBoundingClientRect();
     return { width: rect.width, height: rect.height };
   }));
@@ -212,7 +361,7 @@ test("keyboard and touch-sized audience controls work without hiding either rout
 test("touch selection applies the same reversible audience state", async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.startsWith("mobile"), "touch profile only");
   await page.goto("/");
-  const card = page.locator('.audience-selector article').filter({ has: page.getByRole("radio", { name: "I have a technology", exact: true }) });
+  const card = page.locator('.convergence-routes article').filter({ has: page.getByRole("radio", { name: "I have a technology", exact: true }) });
   await expect(card).toHaveCount(1);
   await card.locator("label").tap();
   await expect(page.getByRole("radio", { name: "I have a technology", exact: true })).toBeChecked();
@@ -310,7 +459,8 @@ test.describe("Phase 3 without JavaScript", () => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/");
     await expect(page.locator(".quantum-signal-fallback")).toBeVisible();
-    await expect(page.locator(".alignment-connectors")).toBeVisible();
+    await expect(page.locator(".convergence-cell")).toBeVisible();
+    await expect(page.locator(".convergence-plane")).toHaveCount(3);
     await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
     await expect(page.locator("#signal-story [data-signal-stage] > .signal-stage-diagram")).toHaveCount(5);
     await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();

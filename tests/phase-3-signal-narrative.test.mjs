@@ -38,7 +38,7 @@ test("the five-stage route uses approved descriptions and explicit resolution la
 test("audience preference remains a nullable session-only enum", async () => {
   const [hook, selector, closing] = await Promise.all([
     read("../app/hooks/useAudiencePreference.ts"),
-    read("../app/components/home/AudienceSelector.tsx"),
+    read("../app/components/home/ConvergenceChamber.tsx"),
     read("../app/components/home/ClosingConversion.tsx"),
   ]);
   assert.match(hook, /useState<AudienceId \| null>\(null\)/);
@@ -57,17 +57,18 @@ test("Phase 3 adds no scroll, animation, or 3D dependency", async () => {
   }
 });
 
-test("the illustrative alignment connectors are box-relative and mobile-resolved", async () => {
+test("the illustrative convergence planes are bounded, semantic, and mobile-resolved", async () => {
   const [scene, styles] = await Promise.all([
-    read("../app/components/home/AlignmentScene.tsx"),
+    read("../app/components/home/ConvergenceChamber.tsx"),
     read("../app/styles/signal.css"),
   ]);
-  assert.match(scene, /className="alignment-connectors" aria-hidden="true"/);
-  assert.doesNotMatch(scene, /<svg|viewBox|<path/);
-  assert.match(styles, /grid-template-columns:\s*minmax\(0, 1fr\) clamp/);
-  assert.match(styles, /\.alignment-connector-input:nth-of-type\(5\)/);
-  assert.match(styles, /\.alignment-connector-output:nth-of-type\(2\)/);
-  assert.match(styles, /grid-template-rows:\s*auto 84px auto/);
-  assert.match(styles, /\.alignment-inputs li:not\(:last-child\)::after/);
-  assert.match(styles, /\.alignment-outputs li::before/);
+  for (const label of ["Operational need", "Technology", "Field environment", "Proof condition"]) assert.match(scene, new RegExp(label));
+  assert.match(scene, /href="\/for-partners"|item\.primary\.href/);
+  assert.match(scene, /href="\/about"/);
+  assert.match(styles, /\.convergence-cell[^}]*perspective:/);
+  assert.match(styles, /\.convergence-plane--need/);
+  assert.match(styles, /\.convergence-plane--technology/);
+  assert.match(styles, /\.convergence-plane--environment/);
+  assert.match(styles, /@media \(max-width: 560px\)[\s\S]*\.convergence-cell[^}]*perspective:\s*none/);
+  assert.doesNotMatch(scene, /<canvas|<svg|WebGL|three/i);
 });

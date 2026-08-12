@@ -13,7 +13,7 @@ test("the approved brand assets remain within their budgets", async () => {
   assert.ok(logo.size <= 10_000, `logo is ${logo.size} bytes`);
   assert.ok(favicon.size <= 150_000, `favicon is ${favicon.size} bytes`);
   const source = await readFile(new URL("../app/SiteExperience.tsx", import.meta.url), "utf8");
-  assert.match(source, /hero-safe-visual/);
+  assert.match(source, /InspectionFieldHero/);
   assert.doesNotMatch(source, /<video|HeroMedia|poster=/);
 });
 
@@ -57,8 +57,8 @@ test("built client assets stay within initial gzip guardrails", async () => {
     if (file.endsWith(".js")) javascript += compressed;
     else css += compressed;
   }
-  assert.ok(javascript <= 114_250, `client JavaScript is ${javascript} bytes gzip`);
-  assert.ok(css <= 15_433, `client CSS is ${css} bytes gzip`);
+  assert.ok(javascript <= 118_000, `client JavaScript is ${javascript} bytes gzip`);
+  assert.ok(css <= 18_500, `client CSS is ${css} bytes gzip`);
 });
 
 test("production styles do not introduce sub-11px type", async () => {

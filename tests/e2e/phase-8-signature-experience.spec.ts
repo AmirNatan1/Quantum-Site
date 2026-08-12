@@ -102,10 +102,10 @@ test("hero and finite Signal use one authored focal and one sixteen-anchor carri
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  const heading = page.getByRole("heading", { level: 1, name: "Prove it where it has to work" });
+  const heading = page.getByRole("heading", { level: 1, name: "Prove it where it has to work." });
   await expect(heading).toBeVisible();
   await expect(heading.locator(":scope > span")).toHaveCount(3);
-  await expect(page.locator(".hero-safe-visual")).toBeVisible();
+  await expect(page.locator(".inspection-field")).toBeVisible();
   await expect(page.locator("[data-signal-anchor]")).toHaveCount(16);
   await expect(page.locator(".quantum-signal-track")).toHaveCount(1);
   await expect(page.locator(".quantum-signal-carrier")).toHaveCount(1);
@@ -233,16 +233,19 @@ test("Signal visibility fails closed for missing, empty, stale, and unknown phas
   const root = page.locator(".home-narrative");
   await expect(root).toHaveAttribute("data-scene-enhanced", "");
   for (const phase of [null, "", "stale", "unknown"]) {
-    await root.evaluate((element, value) => {
+    const opacity = await root.evaluate((element, value) => {
       if (value === null) element.removeAttribute("data-signal-phase");
       else element.setAttribute("data-signal-phase", value);
+      return {
+        carrier: getComputedStyle(element.querySelector(".quantum-signal-carrier") as Element).opacity,
+        head: getComputedStyle(element.querySelector(".quantum-signal-head") as Element).opacity,
+      };
     }, phase);
-    await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
-    await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
+    expect(opacity).toEqual({ carrier: "0", head: "0" });
   }
 });
 
-test("sticky Signal ownership retains the established viewport boundary", async ({ page }) => {
+test("sticky Signal ownership retains the established viewport boundary", async ({ page }, testInfo) => {
   for (const viewport of [
     { width: 1100, height: 700, sticky: false },
     { width: 1101, height: 700, sticky: true },
@@ -252,18 +255,79 @@ test("sticky Signal ownership retains the established viewport boundary", async 
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
-    expect(await page.locator(".signal-story-intro").evaluate((element) => getComputedStyle(element).position)).toBe(viewport.sticky ? "sticky" : "static");
+    await expect(page.locator("html")).toHaveClass(/(?:^|\s)js-ready(?:\s|$)/);
+    await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
+    const state = await page.locator(".signal-story-intro").evaluate((element) => ({
+      innerWidth,
+      innerHeight,
+      widthMedia: matchMedia("(width >= 1101px)").matches,
+      heightMedia: matchMedia("(height >= 700px)").matches,
+      noPreference: matchMedia("(prefers-reduced-motion: no-preference)").matches,
+      reduce: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      jsReady: document.documentElement.classList.contains("js-ready"),
+      enhanced: document.querySelector(".home-narrative")?.hasAttribute("data-scene-enhanced") ?? false,
+      position: getComputedStyle(element).position,
+    }));
+    console.log("PHASE8_STICKY_BOUNDARY", JSON.stringify({
+      project: testInfo.project.name,
+      repeatEachIndex: testInfo.repeatEachIndex,
+      viewport,
+      state,
+    }));
+    expect(state).toMatchObject({
+      innerWidth: viewport.width,
+      innerHeight: viewport.height,
+      widthMedia: viewport.width >= 1101,
+      heightMedia: viewport.height >= 700,
+      noPreference: true,
+      reduce: false,
+      jsReady: true,
+      enhanced: true,
+    });
+    expect(state.position).toBe(viewport.sticky ? "sticky" : "static");
   }
   await page.setViewportSize({ width: 1101, height: 700 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.reload();
-  expect(await page.locator(".signal-story-intro").evaluate((element) => getComputedStyle(element).position)).not.toBe("sticky");
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator("html")).toHaveClass(/(?:^|\s)js-ready(?:\s|$)/);
+  await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
+  const reducedState = await page.locator(".signal-story-intro").evaluate((element) => ({
+    innerWidth,
+    innerHeight,
+    widthMedia: matchMedia("(width >= 1101px)").matches,
+    heightMedia: matchMedia("(height >= 700px)").matches,
+    noPreference: matchMedia("(prefers-reduced-motion: no-preference)").matches,
+    reduce: matchMedia("(prefers-reduced-motion: reduce)").matches,
+    jsReady: document.documentElement.classList.contains("js-ready"),
+    enhanced: document.querySelector(".home-narrative")?.hasAttribute("data-scene-enhanced") ?? false,
+    position: getComputedStyle(element).position,
+  }));
+  console.log("PHASE8_STICKY_BOUNDARY", JSON.stringify({
+    project: testInfo.project.name,
+    repeatEachIndex: testInfo.repeatEachIndex,
+    viewport: { width: 1101, height: 700, reducedMotion: true },
+    state: reducedState,
+  }));
+  expect(reducedState).toMatchObject({
+    innerWidth: 1101,
+    innerHeight: 700,
+    widthMedia: true,
+    heightMedia: true,
+    noPreference: false,
+    reduce: true,
+    jsReady: true,
+    enhanced: true,
+    position: "relative",
+  });
 });
 
 test("shared navigation switches before collision and PageHero geometry stays open", async ({ page }, testInfo) => {
-  for (const width of [890, 959, 960, 961, 1100]) {
+  const requiredWidths = [959, 960, 961, 1000, 1100, 1200, 1440];
+  const widths = testInfo.project.name === "chromium" ? requiredWidths : [959, 960, 1100];
+  for (const width of widths) {
     await page.setViewportSize({ width, height: 700 });
-    await page.goto("/for-partners");
+    await page.goto("/spark");
     await page.evaluate(() => document.fonts.ready);
     const compact = width < 960;
     if (compact) {
@@ -272,11 +336,46 @@ test("shared navigation switches before collision and PageHero geometry stays op
     } else {
       await expect(page.locator(".menu-toggle")).toBeHidden();
       await expect(page.locator(".site-nav")).toBeVisible();
-      const lines = await page.locator(".site-nav > a").evaluateAll((links) => links.map((link) => ({
-        rects: link.getClientRects().length,
-        whiteSpace: getComputedStyle(link).whiteSpace,
-      })));
-      expect(lines.every(({ rects, whiteSpace }) => rects === 1 && whiteSpace === "nowrap")).toBe(true);
+      const geometry = await page.locator(".site-nav").evaluate((navigation) => {
+        const links = Array.from(navigation.querySelectorAll<HTMLAnchorElement>(":scope > a"))
+          .filter((link) => {
+            const style = getComputedStyle(link);
+            return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+          })
+          .map((link) => {
+            const rect = link.getBoundingClientRect();
+            return {
+              label: link.textContent?.trim() ?? "",
+              left: rect.left,
+              right: rect.right,
+              top: rect.top,
+              bottom: rect.bottom,
+              width: rect.width,
+              height: rect.height,
+              rects: link.getClientRects().length,
+              whiteSpace: getComputedStyle(link).whiteSpace,
+            };
+          });
+        const intersections = links.flatMap((first, firstIndex) => links.slice(firstIndex + 1).filter((second) =>
+          Math.max(first.left, second.left) < Math.min(first.right, second.right)
+          && Math.max(first.top, second.top) < Math.min(first.bottom, second.bottom),
+        ).map((second) => `${first.label}/${second.label}`));
+        const spark = links.find((link) => link.label === "SPARK");
+        return { innerWidth, links, intersections, spark };
+      });
+      expect(geometry.links).toHaveLength(7);
+      for (const link of geometry.links) {
+        expect(link.left, `${width}px ${link.label} left`).toBeGreaterThanOrEqual(0);
+        expect(link.right, `${width}px ${link.label} right`).toBeLessThanOrEqual(geometry.innerWidth);
+        expect(link.width, `${width}px ${link.label} width`).toBeGreaterThan(0);
+        expect(link.height, `${width}px ${link.label} height`).toBeGreaterThan(0);
+        expect(link.rects, `${width}px ${link.label} client rects`).toBe(1);
+        expect(link.whiteSpace, `${width}px ${link.label} white-space`).toBe("nowrap");
+      }
+      expect(geometry.intersections, `${width}px link intersections`).toEqual([]);
+      expect(geometry.spark, `${width}px SPARK geometry`).toBeDefined();
+      expect(geometry.spark?.left ?? -1).toBeGreaterThanOrEqual(0);
+      expect(geometry.spark?.right ?? width + 1).toBeLessThanOrEqual(geometry.innerWidth);
     }
   }
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -353,6 +452,8 @@ test("header and shared PageHero scrolling retain zero layout shift", async ({ p
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(async () => {
+    (window as Window & { __phase8Cls?: number }).__phase8Cls = 0;
+    document.documentElement.style.scrollBehavior = "auto";
     scrollTo(0, document.documentElement.scrollHeight - innerHeight);
     await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     scrollTo(0, 0);
@@ -371,7 +472,7 @@ test("responsive, increased-text, reduced-motion, and forced-color presentations
     await page.evaluate(() => document.fonts.ready);
     const geometry = await page.evaluate(() => ({
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      hero: document.querySelector(".home-hero")?.getBoundingClientRect().height ?? 0,
+      hero: document.querySelector(".proving-hero")?.getBoundingClientRect().height ?? 0,
       stages: document.querySelectorAll("[data-signal-stage]").length,
       sticky: getComputedStyle(document.querySelector(".signal-panel") as Element).display !== "none",
     }));
@@ -384,7 +485,7 @@ test("responsive, increased-text, reduced-motion, and forced-color presentations
   await page.goto("/");
   await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work." })).toBeVisible();
   await expect(page.locator("[data-signal-stage]")).toHaveCount(5);
   await expect(page.locator(".closing-conversion")).toBeVisible();
 
@@ -419,20 +520,20 @@ test.describe("Phase 8 without JavaScript", () => {
   test("renders the complete hero, static Signal route, stages, and terminal actions", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work." })).toBeVisible();
     await expect(page.locator(".quantum-signal-fallback")).toBeVisible();
     await expect(page.locator(".quantum-signal-fallback i")).toHaveCount(16);
     await expect(page.locator("[data-signal-stage]")).toHaveCount(5);
     await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();
     await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
-    const hidden = await page.locator(".home-hero, [data-signal-stage], .closing-conversion").evaluateAll((elements) => elements.filter((element) => {
+    const hidden = await page.locator(".proving-hero, [data-signal-stage], .closing-conversion").evaluateAll((elements) => elements.filter((element) => {
       const style = getComputedStyle(element);
       return style.display === "none" || style.visibility === "hidden" || style.opacity === "0";
     }).length);
     expect(hidden).toBe(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
-    await page.setViewportSize({ width: 890, height: 700 });
+    await page.setViewportSize({ width: 960, height: 700 });
     await page.goto("/for-partners");
     await expect(page.locator(".menu-toggle")).toBeHidden();
     await expect(page.locator(".site-nav")).toBeVisible();

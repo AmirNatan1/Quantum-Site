@@ -17,10 +17,14 @@ npm run dev
 npm run lint
 npm run typecheck
 npm test
-npm run test:e2e
+npm run test:e2e:release
 ```
 
 The test suite compiles the production bundle, server-renders every public route, validates structured content and asset budgets, and checks the production brand assets. Playwright covers Chromium, WebKit, mobile viewports, keyboard navigation, reduced motion, no-JavaScript behavior, and honest form availability.
+
+Ordinary `npm run test:e2e` invocations use an explicit four-worker Playwright topology to keep the multi-engine functional matrix stable; explicit CLI worker overrides remain available for focused diagnostics.
+
+`npm run test:e2e:release` is the canonical full release command. It first runs the `@release-performance` contract through all four browser projects with one worker, then runs every remaining browser test with the four-worker default. This isolates controlled performance measurement from unrelated browser-worker contention without changing thresholds or browser coverage.
 
 ## Content and evidence
 
