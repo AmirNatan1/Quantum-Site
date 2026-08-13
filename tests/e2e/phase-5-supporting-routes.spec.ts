@@ -1,23 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { homeHeightBudgets, homeHeightKey, measureHomeHeight } from "./home-height-contract";
+import { expectHomeHeightWithinBudget, homeHeightBudgets, homeHeightKey, measureHomeHeight } from "./home-height-contract";
+import { supportingRouteHeightCaps, supportingRouteViewports } from "./phase-5-height-contract";
 
 test.describe.configure({ mode: "serial" });
 
 const publicRoutes = ["/", "/about", "/for-partners", "/for-startups", "/spark", "/industries", "/pocs", "/case-studies", "/contact"];
 const statusRoutes = ["/updates", "/spark-register"];
-const viewports = [[1440, 900], [1100, 700], [890, 700], [390, 844], [360, 800]] as const;
-const heightCaps: Record<string, readonly number[]> = {
-  "/about": [5050, 5200, 5500, 6200, 6300],
-  "/for-partners": [3957, 3344, 3266, 4690, 4823],
-  "/for-startups": [4846, 4585, 4453, 5786, 5869],
-  "/spark": [4798, 4420, 4428, 4801, 4840],
-  "/industries": [3564, 3440, 3413, 3208, 3208],
-  "/pocs": [6251, 6293, 6303, 9651, 10026],
-  "/case-studies": [2455, 2318, 2263, 2318, 2326],
-  "/updates": [1665, 1613, 1599, 1745, 1745],
-  "/contact": [1872, 1817, 1811, 2326, 2326],
-  "/spark-register": [1872, 1817, 1811, 2360, 2360],
-};
 
 test("all Phase 5 routes support direct entry and retain route metadata", async ({ page }) => {
   for (const route of [...publicRoutes, ...statusRoutes]) {
@@ -177,8 +165,8 @@ test.describe("measured Phase 5 budgets", () => {
 test("route heights, responsive geometry, and overflow stay inside the Phase 5 ceilings", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium");
   test.setTimeout(120_000);
-  for (let viewportIndex = 0; viewportIndex < viewports.length; viewportIndex += 1) {
-    const [width, height] = viewports[viewportIndex];
+  for (let viewportIndex = 0; viewportIndex < supportingRouteViewports.length; viewportIndex += 1) {
+    const [width, height] = supportingRouteViewports[viewportIndex];
     await page.setViewportSize({ width, height });
     for (const route of [...publicRoutes, ...statusRoutes]) {
       await page.goto(route, { waitUntil: "networkidle" });
@@ -187,11 +175,7 @@ test("route heights, responsive geometry, and overflow stay inside the Phase 5 c
         const metrics = await measureHomeHeight(page);
         const budget = homeHeightBudgets[homeHeightKey(width, height)];
         console.log(`PHASE5_HOME_HEIGHT ${width}x${height} ${JSON.stringify({ ...metrics, budget })}`);
-        expect.soft(metrics.d2, `${route} at ${width}x${height} D2 minimum`).toBeGreaterThanOrEqual(budget.d2Minimum);
-        expect.soft(metrics.d2, `${route} at ${width}x${height} D2 maximum`).toBeLessThanOrEqual(budget.d2Maximum);
-        expect.soft(metrics.nonD2, `${route} at ${width}x${height} non-D2 height`).toBeLessThanOrEqual(budget.nonD2Maximum);
-        expect.soft(metrics.total, `${route} at ${width}x${height} total height`).toBeLessThanOrEqual(budget.totalMaximum);
-        expect.soft(metrics.overflow, `${route} at ${width}x${height} overflow`).toBeLessThanOrEqual(1);
+        expectHomeHeightWithinBudget(metrics, budget, `${route} at ${width}x${height}`);
         continue;
       }
       const metrics = await page.evaluate(() => ({
@@ -199,7 +183,7 @@ test("route heights, responsive geometry, and overflow stay inside the Phase 5 c
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       }));
       console.log(`PHASE5_HEIGHT ${route} ${width}x${height} ${metrics.height}`);
-      expect.soft(metrics.height, `${route} at ${width}x${height}`).toBeLessThanOrEqual(heightCaps[route][viewportIndex]);
+      expect.soft(metrics.height, `${route} at ${width}x${height}`).toBeLessThanOrEqual(supportingRouteHeightCaps[route as keyof typeof supportingRouteHeightCaps][viewportIndex]);
       expect.soft(metrics.overflow, `${route} at ${width}x${height}`).toBeLessThanOrEqual(1);
     }
   }
@@ -331,7 +315,8 @@ test.describe("without JavaScript", () => {
     await expect(page.locator(".sector-static-fallback .plain-card")).toHaveCount(4);
     await expect(page.locator('.playground-controls[role="tablist"]')).toBeHidden();
     await expect(page.locator(".playground-static-controls article")).toHaveCount(3);
-    await expect(page.locator("[data-challenge-static-fallback]")).toBeVisible();
+    await expect(page.locator("[data-problem-field]")).toBeVisible();
+    await expect(page.locator("[data-problem-record]")).toHaveCount(9);
 
     await page.goto("/pocs");
     await expect(page.locator(".need-filters")).toBeHidden();

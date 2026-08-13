@@ -22,9 +22,9 @@ test("Phase 3.1 declares the shared entry, progression, resolved, and handoff co
   assert.match(progress, /return "entry"/);
   assert.match(progress, /return "progression"/);
   assert.match(progress, /return "resolved"/);
-  assert.equal((data.match(/mode: "full"/g) ?? []).length, 3);
+  assert.equal((data.match(/mode: "full"/g) ?? []).length, 4);
   assert.equal((data.match(/mode: "light"/g) ?? []).length, 4);
-  assert.equal((data.match(/mode: "static"/g) ?? []).length, 3);
+  assert.equal((data.match(/mode: "static"/g) ?? []).length, 2);
 });
 
 test("scene progress uses cached geometry and DOM properties without scroll-frame React renders", async () => {

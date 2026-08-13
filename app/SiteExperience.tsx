@@ -18,8 +18,8 @@ import { ConvergenceChamber } from "./components/home/ConvergenceChamber";
 import { InspectionFieldHero } from "./components/home/InspectionFieldHero";
 import { ProblemFramingChamber } from "./components/home/ProblemFramingChamber";
 import { ProcessStory } from "./components/home/ProcessStory";
-import { ChallengeDecisionInstrument } from "./components/needs/ChallengeDecisionInstrument";
 import { NeedsBoard } from "./components/needs/NeedsBoard";
+import { ProblemField } from "./components/needs/ProblemField";
 import { SignalPath } from "./components/signal/SignalPath";
 import { SparkStatusPanel } from "./components/spark/SparkStatusPanel";
 import { ClosedSubmissionState } from "./components/forms/ClosedSubmissionState";
@@ -425,15 +425,18 @@ function HomePage() {
       <ConvergenceChamber />
       <ProcessStory />
       <div
-        className="narrative-anchor-wrapper"
+        className="problem-field-scene"
         data-scene-id="representative-challenges"
-        data-scene-mode="static"
+        data-scene-mode="full"
+        data-scene-visual
         data-signal-anchor="representative-challenges"
         data-signal-order="11"
         data-signal-lane="start"
+        data-problem-field
+        data-problem-state="entry"
       >
         <i className="scene-signal-port" data-signal-port aria-hidden="true" />
-        <ChallengeDecisionInstrument />
+        <ProblemField />
       </div>
       <SectorSection />
       <EvidenceEmptyState compact />

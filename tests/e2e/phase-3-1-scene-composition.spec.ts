@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { homeHeightBudgets, homeHeightKey, measureHomeHeight } from "./home-height-contract";
 
 const MARKER_LINE = 0.52;
 const ENTRY_LINE = 0.88;
@@ -252,7 +253,7 @@ test("chapter contract exposes full, light, and static scenes in semantic order"
     { id: "audience", mode: "light" },
     { id: "operating-model", mode: "full" },
     { id: "quantum-route", mode: "full" },
-    { id: "representative-challenges", mode: "static" },
+    { id: "representative-challenges", mode: "full" },
     { id: "focus-areas", mode: "static" },
     { id: "evidence-resolution", mode: "static" },
     { id: "spark-test-transition", mode: "light" },
@@ -486,15 +487,16 @@ test("final conversion resolves inside its own section without maximum document 
 test("timing correction does not increase the Phase 3.1 page-height baseline", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "layout height is sampled once in Chromium");
   for (const viewport of [
-    { width: 1440, height: 900, maximum: 17000 },
-    { width: 360, height: 800, maximum: 22000 },
+    { width: 1440, height: 900 },
+    { width: 360, height: 800 },
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
-    const height = await page.evaluate(() => document.documentElement.scrollHeight);
-    console.log(`PHASE31_HEIGHT ${viewport.width}x${viewport.height} ${height}`);
-    expect(height, `${viewport.width}x${viewport.height}`).toBeLessThanOrEqual(viewport.maximum);
+    const metrics = await measureHomeHeight(page);
+    const budget = homeHeightBudgets[homeHeightKey(viewport.width, viewport.height)];
+    console.log(`PHASE31_HEIGHT ${viewport.width}x${viewport.height} ${JSON.stringify({ ...metrics, budget })}`);
+    expect(metrics.total, `${viewport.width}x${viewport.height}`).toBeLessThanOrEqual(budget.totalMaximum);
   }
 });
 

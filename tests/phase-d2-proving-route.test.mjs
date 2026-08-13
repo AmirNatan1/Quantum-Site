@@ -64,13 +64,12 @@ test("D2 has authored sticky eligibility, mobile, reduced-motion, no-JS, and for
 });
 
 test("D2-RR keeps the accepted heading, route landmark, and section-aware height contract", async () => {
-  const [route, data, styles, motionSpec, p0Spec, phase4Spec, phase5Spec, heightContract] = await Promise.all([
+  const [route, data, styles, motionSpec, p0Spec, phase5Spec, heightContract] = await Promise.all([
     read("../app/components/home/ProcessStory.tsx"),
     read("../app/data/site.ts"),
     read("../app/styles/signal.css"),
     read("./e2e/motion-foundation.spec.ts"),
     read("./e2e/p0.spec.ts"),
-    read("./e2e/phase-4-interactive-instruments.spec.ts"),
     read("./e2e/phase-5-supporting-routes.spec.ts"),
     read("./e2e/home-height-contract.ts"),
   ]);
@@ -100,9 +99,9 @@ test("D2-RR keeps the accepted heading, route landmark, and section-aware height
   assert.ok(enhancedHeight <= 760);
   assert.doesNotMatch(styles, /\.proving-route \{ min-height: 820svh;/);
 
-  assert.match(phase4Spec, /measureHomeHeight\(page\)/);
   assert.match(phase5Spec, /measureHomeHeight\(page\)/);
-  assert.match(heightContract, /nonD2Maximum/);
+  assert.match(heightContract, /remainderMaximum/);
   assert.match(heightContract, /d2Maximum/);
+  assert.match(heightContract, /d3Maximum/);
   assert.match(heightContract, /totalMaximum/);
 });

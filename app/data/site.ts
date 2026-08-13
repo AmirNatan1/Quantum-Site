@@ -273,7 +273,7 @@ export const homeSceneContract = [
   { id: "audience", order: 3, mode: "light", entryAnchor: "audience-choice", exitAnchor: "audience-choice", depthPx: 6 },
   { id: "operating-model", order: 4, mode: "full", entryAnchor: "workshop-alignment", exitAnchor: "workshop-alignment", depthPx: 8 },
   { id: "quantum-route", order: 5, mode: "full", entryAnchor: "frame", exitAnchor: "decide", internalAnchors: ["frame", "configure", "test", "resolve", "decide"], depthPx: 12 },
-  { id: "representative-challenges", order: 6, mode: "static", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 0 },
+  { id: "representative-challenges", order: 6, mode: "full", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 10 },
   { id: "focus-areas", order: 7, mode: "static", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 0 },
   { id: "evidence-resolution", order: 8, mode: "static", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 0 },
   { id: "spark-test-transition", order: 9, mode: "light", entryAnchor: "spark-next-step", exitAnchor: "test-capability", internalAnchors: ["spark-next-step", "test-capability"], depthPx: 8 },

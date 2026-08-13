@@ -308,7 +308,7 @@ test("D1 clamp ownership is narrow while SPARK keeps its local Signal sequence",
   expect(sparkStates.at(-1)?.signalProgress).toBeCloseTo(sparkStates[2].signalProgress, 3);
 
   if (testInfo.project.name !== "mobile-webkit") {
-    for (const scene of ["representative-challenges", "focus-areas", "evidence-resolution"] as const) {
+    for (const scene of ["focus-areas", "evidence-resolution"] as const) {
       await moveSceneTo(page, scene, .50);
       const runtime = await readSignalRuntime(page);
       expect(runtime.sceneId).toBe(scene);

@@ -48,12 +48,29 @@ function observeNavigation(page: Page) {
 }
 
 async function clickPrimaryRoute(page: Page, route: string) {
-  const link = page.locator(`.site-nav a[href="${route}"]`);
-  const menu = page.locator(".menu-toggle");
-  if (await menu.isVisible() && !await link.isVisible()) await menu.click();
+  const navigation = page.getByRole("navigation", { name: "Primary navigation" });
+  const link = navigation.locator(`a[href="${route}"]`);
+  const menu = page.getByRole("button", { name: /^(?:Open|Close) navigation$/ });
+  const menuAvailable = await menu.isVisible();
+  const menuExpandedBefore = menuAvailable ? await menu.getAttribute("aria-expanded") : null;
+
+  if (menuAvailable) {
+    if (menuExpandedBefore !== "true") await menu.click();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+    await expect(navigation).toBeVisible();
+  }
+  await expect(link).toBeVisible();
+  const selectedLink = (await link.innerText()).trim();
   await link.click();
   await expect(page).toHaveURL(new RegExp(`${route === "/" ? "/" : route.replace("/", "\\/")}$`));
   await expect(page.locator("main#main-content")).toBeFocused();
+
+  return {
+    menuAvailable,
+    menuExpandedBefore,
+    menuExpandedAtRouteClick: menuAvailable ? "true" : null,
+    selectedLink,
+  };
 }
 
 function expectCleanNavigation(
@@ -96,13 +113,26 @@ test("Pages RSC artifacts support root and named client navigation, focus, Back,
   expectCleanNavigation(observed, "/about", ["/.rsc", "/about.rsc"]);
 });
 
-test("Pages RSC artifacts preserve additional named-route round trips without document fallback", async ({ page }) => {
+test("Pages RSC artifacts preserve additional named-route round trips without document fallback", async ({ page }, testInfo) => {
   const observed = observeNavigation(page);
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass(/js-ready/);
 
   for (const route of ["/for-partners", "/spark", "/pocs"]) {
-    await clickPrimaryRoute(page, route);
+    const navigation = await clickPrimaryRoute(page, route);
+    if (route === "/pocs") {
+      const rsc = observed.rscResponses.findLast(({ path }) => path === "/pocs.rsc");
+      console.log("PHASE_C1_2_RSC_ROUND_TRIP", JSON.stringify({
+        project: testInfo.project.name,
+        route,
+        rscPath: rsc?.path ?? null,
+        rscStatus: rsc?.status ?? null,
+        documentRequestCount: observed.documents.length,
+        resultingPathname: new URL(page.url()).pathname,
+        mainFocused: await page.locator("main#main-content").evaluate((main) => document.activeElement === main),
+        ...navigation,
+      }));
+    }
     await page.locator('.brand-link[href="/"]').click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("main#main-content")).toBeFocused();

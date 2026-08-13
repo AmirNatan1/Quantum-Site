@@ -50,9 +50,11 @@ type NarrativeCache = {
   sceneOwnership: readonly ProgressRange<HomeSceneId>[];
   stageTimings: readonly ProgressTiming<StageId>[];
   stageOwnership: readonly ProgressRange<StageId>[];
+  problemOwnership: readonly ProgressRange<string>[];
   anchorProgress: ReadonlyMap<HomeSignalAnchorId, number>;
   sceneIndex: number;
   stageIndex: number;
+  problemIndex: number;
 };
 
 const EMPTY_GEOMETRY: SignalGeometry = { width: 1, height: 1, path: "", points: [] };
@@ -61,9 +63,11 @@ const EMPTY_CACHE: NarrativeCache = {
   sceneOwnership: [],
   stageTimings: [],
   stageOwnership: [],
+  problemOwnership: [],
   anchorProgress: new Map(),
   sceneIndex: 0,
   stageIndex: 0,
+  problemIndex: 0,
 };
 const STAGE_IDS = provingStages.map((stage) => stage.id);
 const STAGE_ID_SET = new Set<StageId>(STAGE_IDS);
@@ -74,6 +78,16 @@ const D1_LOCKED_EXIT_SCENES: ReadonlySet<HomeSceneId> = new Set([
   "operating-model",
 ]);
 const WRITE_EPSILON = 0.0025;
+
+function normalizeUnitProgress(value: number, start: number, end: number) {
+  return clamp01((value - start) / Math.max(Number.EPSILON, end - start));
+}
+const PROBLEM_FIELD_PROGRESS = {
+  entryEnd: 0.17,
+  inspectEnd: 0.82,
+  overviewEnd: 0.945,
+} as const;
+const PROBLEM_SCENE_INDEX = homeSceneContract.findIndex((scene) => scene.id === "representative-challenges");
 
 function provingState(progress: number, handoff: number) {
   if (handoff > 0) return "exit";
@@ -223,8 +237,16 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       sceneVisuals.set(scene.id, declared.length > 0 ? declared : [sceneElement]);
     });
     const story = sceneElements.get("quantum-route");
+    const problemField = sceneElements.get("representative-challenges");
+    const problemRecords = problemField
+      ? Array.from(problemField.querySelectorAll<HTMLElement>("[data-problem-record]"))
+      : [];
+    const problemIndexItems = problemField
+      ? Array.from(problemField.querySelectorAll<HTMLElement>("[data-problem-index-item]"))
+      : [];
     const reached = new Set<StageId>();
     const fontSet = "fonts" in document ? document.fonts : null;
+    const enhancedMedia = window.matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)");
     let resizeTimer = 0;
     let measureFrame = 0;
     let cancelled = false;
@@ -246,11 +268,96 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       if (element.dataset.stageState !== state) element.dataset.stageState = state;
     };
 
+    const setProblemPositions = (activeIndex: number, phase: "entry" | "inspect" | "overview" | "exit") => {
+      const positionFor = (index: number) => {
+        if (phase !== "inspect") return phase === "entry" ? "future" : "context";
+        if (index === activeIndex) return "active";
+        return index < activeIndex ? "past" : "future";
+      };
+      problemRecords.forEach((record, index) => {
+        const position = positionFor(index);
+        if (record.dataset.problemPosition !== position) record.dataset.problemPosition = position;
+      });
+      problemIndexItems.forEach((item, index) => {
+        const position = positionFor(index);
+        if (item.dataset.problemPosition !== position) item.dataset.problemPosition = position;
+      });
+    };
+
+    const setProblemFieldProgress = (progress: number, marker: number, force = false) => {
+      if (!problemField || problemRecords.length === 0) return;
+      const value = reducedMotion ? 1 : progress;
+      writeProgress(problemField, "--problem-field-p", value, force);
+
+      let phase: "entry" | "inspect" | "overview" | "exit" = "entry";
+      let activeIndex = -1;
+      let localProgress = 0;
+
+      if (reducedMotion) {
+        phase = "overview";
+        localProgress = 1;
+      } else if (enhancedMedia.matches) {
+        if (progress < PROBLEM_FIELD_PROGRESS.entryEnd) {
+          phase = "entry";
+        } else if (progress < PROBLEM_FIELD_PROGRESS.inspectEnd) {
+          phase = "inspect";
+          const inspection = normalizeUnitProgress(
+            progress,
+            PROBLEM_FIELD_PROGRESS.entryEnd,
+            PROBLEM_FIELD_PROGRESS.inspectEnd,
+          );
+          const scaled = Math.min(problemRecords.length - Number.EPSILON, inspection * problemRecords.length);
+          activeIndex = Math.min(problemRecords.length - 1, Math.floor(scaled));
+          const segment = 1 / problemRecords.length;
+          localProgress = normalizeUnitProgress(inspection, activeIndex * segment, (activeIndex + 1) * segment);
+        } else if (progress < PROBLEM_FIELD_PROGRESS.overviewEnd) {
+          phase = "overview";
+          localProgress = normalizeUnitProgress(
+            progress,
+            PROBLEM_FIELD_PROGRESS.inspectEnd,
+            PROBLEM_FIELD_PROGRESS.overviewEnd,
+          );
+        } else {
+          phase = "exit";
+          localProgress = normalizeUnitProgress(progress, PROBLEM_FIELD_PROGRESS.overviewEnd, 1);
+        }
+      } else if (cache.problemOwnership.length > 0) {
+        const first = cache.problemOwnership[0];
+        const last = cache.problemOwnership.at(-1) ?? first;
+        if (marker < first.start) {
+          phase = "entry";
+        } else if (marker < last.end) {
+          phase = "inspect";
+          activeIndex = activeRangeIndex(cache.problemOwnership, marker, cache.problemIndex);
+          cache.problemIndex = activeIndex;
+          const range = cache.problemOwnership[activeIndex];
+          localProgress = normalizeProgress(marker, range.start, range.end);
+        } else if (progress < PROBLEM_FIELD_PROGRESS.overviewEnd) {
+          phase = "overview";
+          localProgress = 1;
+        } else {
+          phase = "exit";
+          localProgress = normalizeUnitProgress(progress, PROBLEM_FIELD_PROGRESS.overviewEnd, 1);
+        }
+      }
+
+      if (problemField.dataset.problemState !== phase) problemField.dataset.problemState = phase;
+      if (activeIndex >= 0) {
+        const index = String(activeIndex + 1);
+        if (problemField.dataset.problemIndex !== index) problemField.dataset.problemIndex = index;
+      } else {
+        problemField.removeAttribute("data-problem-index");
+      }
+      writeProgress(problemField, "--problem-local-p", localProgress, force);
+      setProblemPositions(activeIndex, phase);
+    };
+
     const updateProgress = (force = false) => {
       if (cache.sceneTimings.length === 0) return;
       if (reducedMotion) {
         homeSceneContract.forEach((scene) => setSceneProgress(scene, 1, force));
         stageElements.forEach((element) => setStageProgress(element, 1, force));
+        setProblemFieldProgress(1, 0, force);
         root.style.setProperty("--signal-progress", "1");
         story?.style.setProperty("--stage-p", "1");
         story?.style.setProperty("--route-progress", "1");
@@ -270,6 +377,10 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         const range = cache.sceneTimings[index].local;
         setSceneProgress(scene, normalizeProgress(marker, range.start, range.end), force);
       });
+      if (PROBLEM_SCENE_INDEX >= 0) {
+        const range = cache.sceneTimings[PROBLEM_SCENE_INDEX].local;
+        setProblemFieldProgress(normalizeProgress(marker, range.start, range.end), marker, force);
+      }
 
       let stageIndex = cache.stageIndex;
       let stageProgress = 0;
@@ -365,7 +476,9 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         const elements = sceneVisuals.get(scene.id) ?? [];
         const fallback = anchorPositions.get(scene.entryAnchor) ?? rootTop;
         const measured = elements.length > 0 ? elementBounds(elements) : { top: fallback, bottom: fallback + 1 };
-        const exitLine = scene.id === "consortium"
+        const exitLine = scene.id === "representative-challenges"
+          ? VIEWPORT_PROGRESS.entryLine
+          : scene.id === "consortium"
           ? VIEWPORT_PROGRESS.consortiumExitLine
           : scene.id === "audience"
             ? VIEWPORT_PROGRESS.audienceExitLine
@@ -382,7 +495,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         });
       });
       const sceneOwnership = buildOwnershipRanges(sceneTimings, firstMarker);
-      const stickyEligible = window.matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
+      const stickyEligible = enhancedMedia.matches;
       const stagePositions = new Map<StageId, number>();
       stageElements.forEach((element) => {
         const id = element.dataset.signalAnchor as StageId;
@@ -403,15 +516,30 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         stageTimings,
         stageTimings[0]?.local.start ?? firstMarker,
       );
+      const problemTimings = problemRecords.map((element, index) => {
+        const top = documentLayoutTop(element);
+        return buildVisibleTiming(
+          String(index),
+          { top, bottom: top + element.offsetHeight },
+          window.innerHeight,
+          { exitLine: VIEWPORT_PROGRESS.inlineExitLine },
+        );
+      });
+      const problemOwnership = buildOwnershipRanges(
+        problemTimings,
+        problemTimings[0]?.local.start ?? firstMarker,
+      );
 
       cache = {
         sceneTimings,
         sceneOwnership,
         stageTimings,
         stageOwnership,
+        problemOwnership,
         anchorProgress,
         sceneIndex: cache.sceneIndex,
         stageIndex: cache.stageIndex,
+        problemIndex: cache.problemIndex,
       };
       setGeometry({ width, height, path: built.path, points: built.points });
       updateProgress(true);
@@ -431,7 +559,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
         const target = entry.target as HTMLElement;
-        const stickyEligible = window.matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
+        const stickyEligible = enhancedMedia.matches;
         if (stickyEligible !== target.hasAttribute("data-proving-anchor")) return;
         const id = (target.dataset.signalAnchor ?? target.dataset.provingStageContent) as StageId;
         if (!STAGE_ID_SET.has(id) || reached.has(id)) return;
@@ -481,6 +609,13 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       });
       story?.removeAttribute("data-proving-stage");
       story?.removeAttribute("data-proving-state");
+      problemField?.removeAttribute("data-problem-index");
+      problemField?.removeAttribute("data-problem-state");
+      problemField?.style.removeProperty("--problem-field-p");
+      problemField?.style.removeProperty("--problem-local-p");
+      [...problemRecords, ...problemIndexItems].forEach((element) => {
+        element.removeAttribute("data-problem-position");
+      });
     };
   }, [reducedMotion, rootRef]);
 

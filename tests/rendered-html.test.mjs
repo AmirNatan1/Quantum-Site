@@ -47,12 +47,11 @@ test("server-renders the publication-safe Quantum Hub homepage", async () => {
   assert.match(html, /data-inspection-hero/);
   assert.match(html, /aria-label="Prove it where it has to work\."/);
   assert.match(html, /A written answer, against criteria agreed in advance/i);
-  assert.match(html, /Representative challenge:/i);
-  assert.match(html, /data-challenge-instrument/i);
-  assert.match(html, /data-challenge-static-fallback/i);
-  assert.match(html, /Choose a representative challenge to review\./i);
-  assert.match(html, /Review the decision frame/i);
-  assert.match(html, /Illustrative operating model — not a live match\./i);
+  assert.match(html, /data-problem-field/i);
+  assert.match(html, /data-problem-field-visual/i);
+  assert.match(html, /Live Problem Field/i);
+  assert.match(html, /Representative — not an open call/i);
+  assert.equal((html.match(/data-problem-record(?:="(?:true)?")?/gi) ?? []).length, 9);
   assert.match(html, /Our case library is being prepared for publication/i);
   assert.doesNotMatch(html, /<video\b|hero-quantum-hub|og-signal/i);
   assert.doesNotMatch(html, /<textarea\b|<input[^>]+type="(?:text|email|tel|file)"/i);
@@ -62,11 +61,11 @@ test("server-renders the publication-safe Quantum Hub homepage", async () => {
   assert.match(html, /id="signal-story"/);
 });
 
-test("homepage instrument does not replace the POC challenge catalogue", async () => {
+test("homepage Problem Field does not replace the POC challenge catalogue", async () => {
   const home = await (await render("/")).text();
   const pocs = await (await render("/pocs")).text();
-  assert.match(home, /data-challenge-instrument/i);
-  assert.doesNotMatch(pocs, /data-challenge-instrument/i);
+  assert.match(home, /data-problem-field/i);
+  assert.doesNotMatch(pocs, /data-problem-field/i);
   assert.match(pocs, /class="needs-grid"/i);
   assert.match(pocs, /Filter representative challenges/i);
   assert.match(pocs, /These categories describe the kind of work we do\./i);

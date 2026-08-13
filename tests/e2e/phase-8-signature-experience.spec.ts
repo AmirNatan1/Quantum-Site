@@ -159,7 +159,7 @@ test("quiet chapters suppress live travel and closing conversion resolves to a s
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  for (const sceneId of ["representative-challenges", "focus-areas", "evidence-resolution"]) {
+  for (const sceneId of ["focus-areas", "evidence-resolution"]) {
     await moveSceneTo(page, sceneId, .5);
     await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "quiet");
     await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");

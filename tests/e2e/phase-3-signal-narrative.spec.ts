@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { homeHeightBudgets, homeHeightKey, measureHomeHeight } from "./home-height-contract";
 
 const anchorIds = [
   "hero-origin", "consortium-network", "evidence-criteria", "audience-choice", "workshop-alignment",
@@ -415,11 +416,13 @@ test("reduced motion resolves the path and presents every stage without sticky b
 });
 
 test("homepage length stays within the approved review caps", async ({ page }) => {
-  for (const viewport of [{ width: 1440, height: 900, cap: 17000 }, { width: 360, height: 800, cap: 22000 }]) {
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 360, height: 800 }]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
-    expect(await page.evaluate(() => document.documentElement.scrollHeight), `${viewport.width}x${viewport.height}`).toBeLessThanOrEqual(viewport.cap);
+    const metrics = await measureHomeHeight(page);
+    const budget = homeHeightBudgets[homeHeightKey(viewport.width, viewport.height)];
+    expect(metrics.total, `${viewport.width}x${viewport.height}`).toBeLessThanOrEqual(budget.totalMaximum);
   }
 });
 

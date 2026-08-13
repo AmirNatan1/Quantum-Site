@@ -27,8 +27,8 @@ test("homepage exposes publication-safe content and the progressive story", asyn
   await expect(page.locator("video, img[src*='hero-quantum-hub'], img[src*='og-signal']")).toHaveCount(0);
   await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
   await expect(page.getByRole("radio", { name: /I have a technology/i })).toBeVisible();
-  await expect(page.locator(".need-card")).toHaveCount(9);
-  await expect(page.locator(".need-card").first()).toContainText("Representative");
+  await expect(page.locator("[data-problem-record]")).toHaveCount(9);
+  await expect(page.getByText("Representative — not an open call", { exact: true })).toBeAttached();
   await expect(page.getByRole("heading", { name: /case library is being prepared for publication/i })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
@@ -249,6 +249,6 @@ test.describe("without JavaScript", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
     await expect(page.locator('[data-proving-stage-content="frame"]')).toBeVisible();
     await expect(page.getByRole("link", { name: "Bring an operational need" }).first()).toBeVisible();
-    await expect(page.locator(".need-card")).toHaveCount(9);
+    await expect(page.locator("[data-problem-record]")).toHaveCount(9);
   });
 });
