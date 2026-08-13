@@ -32,8 +32,8 @@ test("Phase 8 keeps one sixteen-anchor Signal and replaces the historical stroke
   assert.equal((hook.match(/new IntersectionObserver/g) ?? []).length, 1);
 });
 
-test("D1 replaces the opening while keeping the accepted stage and terminal systems", async () => {
-  const [site, styles, globals, closing, manifest, hero, framing, convergence] = await Promise.all([
+test("D1 remains intact while the accepted terminal systems continue after D2", async () => {
+  const [site, styles, globals, closing, manifest, hero, framing, convergence, route, specimen] = await Promise.all([
     read("../app/SiteExperience.tsx"),
     read("../app/styles/signal.css"),
     read("../app/globals.css"),
@@ -42,6 +42,8 @@ test("D1 replaces the opening while keeping the accepted stage and terminal syst
     read("../app/components/home/InspectionFieldHero.tsx"),
     read("../app/components/home/ProblemFramingChamber.tsx"),
     read("../app/components/home/ConvergenceChamber.tsx"),
+    read("../app/components/home/ProcessStory.tsx"),
+    read("../app/components/home/ProvingSpecimen.tsx"),
   ]);
   assert.match(site, /<InspectionFieldHero/);
   assert.match(hero, /aria-label="Prove it where it has to work\."/);
@@ -51,9 +53,11 @@ test("D1 replaces the opening while keeping the accepted stage and terminal syst
   assert.match(framing, /className="framing-apparatus"/);
   assert.match(convergence, /className="convergence-cell"/);
   assert.doesNotMatch(site + styles + globals, /hero-safe-visual|audience-selector|alignment-figure/);
-  assert.match(styles, /--stage-carrier/);
-  assert.match(styles, /\.signal-stage-diagram::before, \.signal-stage-diagram::after/);
-  assert.match(styles, /var\(--stage-handoff\) \* -4px/);
+  assert.match(route, /data-proving-stage="frame"/);
+  assert.match(route, /<ProvingSpecimen/);
+  assert.match(specimen, /data-proving-specimen/);
+  assert.match(styles, /\.proving-route\[data-proving-stage="test"\] \.proving-machine__test-bands/);
+  assert.match(styles, /data-proving-state="dwell"/);
   assert.match(styles, /\.closing-conversion > \.shell::before[^}]*var\(--color-proven\)/);
   assert.match(styles, /html\.js-ready \.closing-conversion:is\(\[data-scene-state="entry"\], \[data-scene-state="progression"\]\)[^}]*var\(--color-live\)/);
   assert.match(closing, /href="\/for-partners"/);
@@ -89,7 +93,7 @@ test("quiet chapters, reduced motion, no-JavaScript, and forced colors retain di
   assert.match(hook, /root\.dataset\.signalPhase !== signalPhase/);
   assert.match(hook, /removeAttribute\("data-signal-phase"\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.quantum-signal-carrier, \.quantum-signal-head\s*{\s*display:\s*none;/);
-  assert.match(styles, /html:not\(\.js-ready\) \.signal-panel/);
+  assert.match(styles, /html:not\(\.js-ready\) \.proving-route__scroll-track/);
   assert.match(styles, /\.quantum-signal-fallback/);
   assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.quantum-signal-carrier/);
   assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.closing-conversion > \.shell::before/);

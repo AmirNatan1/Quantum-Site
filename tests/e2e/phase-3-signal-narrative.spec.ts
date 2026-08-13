@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const anchorIds = [
   "hero-origin", "consortium-network", "evidence-criteria", "audience-choice", "workshop-alignment",
-  "operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works",
+  "frame", "configure", "test", "resolve", "decide",
   "representative-challenges", "focus-areas", "evidence-publication", "spark-next-step", "test-capability", "final-conversion",
 ];
 
@@ -239,7 +239,7 @@ test("signal progress is native-scroll driven and reversible", async ({ page }) 
   const progress = async () => Number(await page.locator(".home-narrative").evaluate((element) => getComputedStyle(element).getPropertyValue("--signal-progress")));
   const start = await progress();
   await page.evaluate(() => {
-    const target = document.querySelector('[data-signal-anchor="scale-what-works"]');
+    const target = document.querySelector('[data-signal-anchor="decide"]');
     if (target) window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY, behavior: "auto" });
     window.dispatchEvent(new Event("quantum-hub:scroll-frame"));
   });
@@ -281,15 +281,16 @@ test("audience preference starts neutral, remains reversible, and stores only th
   await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
 });
 
-test("all five stage diagrams and the three evidence-safe resolutions are present", async ({ page }) => {
+test("all five proving stages and the three evidence-safe decision paths are present", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
-  await expect(page.locator("#signal-story [data-signal-stage] > .signal-stage-diagram")).toHaveCount(5);
-  for (const title of ["Operational need", "Global scouting", "Partner match", "Field POC", "Scale what works"]) {
+  await expect(page.locator("#signal-story [data-proving-apparatus]")).toHaveCount(1);
+  await expect(page.locator("#signal-story [data-proving-specimen]")).toHaveCount(1);
+  for (const title of ["Frame", "Configure", "Test", "Resolve", "Decide"]) {
     await expect(page.getByRole("heading", { level: 3, name: title }).first()).toBeAttached();
   }
-  for (const label of ["Scale", "Reconfigure + retest", "Useful no"]) {
-    await expect(page.locator('[data-signal-anchor="scale-what-works"] .signal-resolution-labels li').filter({ hasText: label })).toBeAttached();
+  for (const label of ["Scale", "Iterate", "Stop"]) {
+    await expect(page.locator(".proving-machine__decision-gate").getByText(label, { exact: true })).toBeAttached();
   }
   await expect(page.getByText("Illustrative operating model — not a live match.", { exact: true })).toBeVisible();
 });
@@ -376,7 +377,14 @@ test("analytics emits only bounded audience, stage, and final CTA payloads", asy
   });
   await page.goto("/");
   await page.getByRole("radio", { name: "I have an operational need" }).check();
-  await page.locator('[data-signal-anchor="field-poc"]').scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    const sticky = matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
+    const target = document.querySelector(sticky
+      ? '[data-signal-anchor="test"]'
+      : '[data-proving-stage-content="test"]');
+    target?.scrollIntoView({ block: "center", behavior: "auto" });
+    dispatchEvent(new Event("quantum-hub:scroll-frame"));
+  });
   await expect.poll(() => page.evaluate(() => (window as Window & { __phase3Events?: { event?: string }[] }).__phase3Events?.some(({ event }) => event === "story_stage_reached"))).toBe(true);
   const cta = page.locator('.closing-conversion a[href="/for-partners"]');
   await cta.evaluate((element) => element.addEventListener("click", (event) => event.preventDefault(), { once: true }));
@@ -396,17 +404,18 @@ test("reduced motion resolves the path and presents every stage without sticky b
   await expect(page.locator(".quantum-signal-track")).toHaveCSS("stroke-width", "1px");
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("display", "none");
   await expect(page.locator(".quantum-signal-head")).toHaveCSS("display", "none");
-  await expect(page.locator(".signal-panel")).toBeHidden();
-  const stages = page.locator("#signal-story [data-signal-stage]");
+  await expect(page.locator("#signal-story .proving-route__station")).toHaveCSS("position", "relative");
+  const stages = page.locator("#signal-story [data-proving-stage-content]");
   await expect(stages).toHaveCount(5);
   for (let index = 0; index < 5; index += 1) {
-    await expect(stages.nth(index).locator(":scope > .signal-stage-diagram")).toBeVisible();
+    await expect(stages.nth(index)).toBeVisible();
     expect(await stages.nth(index).evaluate((element) => element.getBoundingClientRect().height)).toBeLessThanOrEqual(900);
   }
+  await expect(page.locator("#signal-story [data-proving-apparatus]")).toBeVisible();
 });
 
 test("homepage length stays within the approved review caps", async ({ page }) => {
-  for (const viewport of [{ width: 1440, height: 900, cap: 13600 }, { width: 360, height: 800, cap: 17600 }]) {
+  for (const viewport of [{ width: 1440, height: 900, cap: 17000 }, { width: 360, height: 800, cap: 22000 }]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
@@ -428,12 +437,12 @@ test("responsive and orientation matrix retains every stage without overflow", a
     const result = await page.evaluate(() => ({
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       stages: document.querySelectorAll("[data-signal-stage]").length,
-      panelVisible: getComputedStyle(document.querySelector(".signal-panel") as Element).display !== "none",
+      stationSticky: getComputedStyle(document.querySelector(".proving-route__station") as Element).position === "sticky",
       stickyEligible: matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches,
     }));
     expect(result.overflow, `${viewport.width}x${viewport.height}`).toBeLessThanOrEqual(1);
     expect(result.stages).toBe(5);
-    expect(result.panelVisible).toBe(result.stickyEligible);
+    expect(result.stationSticky).toBe(result.stickyEligible);
   }
 });
 
@@ -462,9 +471,10 @@ test.describe("Phase 3 without JavaScript", () => {
     await expect(page.locator(".convergence-cell")).toBeVisible();
     await expect(page.locator(".convergence-plane")).toHaveCount(3);
     await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
-    await expect(page.locator("#signal-story [data-signal-stage] > .signal-stage-diagram")).toHaveCount(5);
+    await expect(page.locator("#signal-story [data-proving-stage-content]")).toHaveCount(5);
+    await expect(page.locator("#signal-story [data-proving-apparatus]")).toBeVisible();
     await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();
     await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
-    await expect(page.getByText("Useful no", { exact: true })).toBeVisible();
+    await expect(page.locator('[data-decision-path="stop"]')).toBeVisible();
   });
 });

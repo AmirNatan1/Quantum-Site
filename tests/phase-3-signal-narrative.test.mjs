@@ -12,7 +12,7 @@ test("Phase 3 declares one complete ordered homepage signal contract", async () 
   ]);
   const ids = [
     "hero-origin", "consortium-network", "evidence-criteria", "audience-choice", "workshop-alignment",
-    "operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works",
+    "frame", "configure", "test", "resolve", "decide",
     "representative-challenges", "focus-areas", "evidence-publication", "spark-next-step", "test-capability", "final-conversion",
   ];
   for (const id of ids) assert.match(data, new RegExp(`id: "${id}"`), id);

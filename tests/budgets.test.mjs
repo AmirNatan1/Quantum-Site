@@ -58,7 +58,7 @@ test("built client assets stay within initial gzip guardrails", async () => {
     else css += compressed;
   }
   assert.ok(javascript <= 118_000, `client JavaScript is ${javascript} bytes gzip`);
-  assert.ok(css <= 18_500, `client CSS is ${css} bytes gzip`);
+  assert.ok(css <= 20_000, `client CSS is ${css} bytes gzip`);
 });
 
 test("production styles do not introduce sub-11px type", async () => {

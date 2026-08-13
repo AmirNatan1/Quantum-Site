@@ -18,7 +18,7 @@ type InstrumentContext = {
 export type AnalyticsPayload =
   | { event: "audience_select"; audience: "partner" | "startup"; route: "/"; placement: "audience_selector" }
   | { event: "cta_click"; audience: "neutral" | "partner" | "startup"; cta: "partner" | "startup"; route: "/"; placement: "final_conversion" }
-  | { event: "story_stage_reached"; stage: "operational-need" | "global-scouting" | "partner-match" | "field-poc" | "scale-what-works"; route: "/" }
+  | { event: "story_stage_reached"; stage: "frame" | "configure" | "test" | "resolve" | "decide"; route: "/" }
   | { event: "need_filter"; route: "/pocs"; placement: "pocs_catalogue"; sector: Sector }
   | ({ event: "instrument_start" } & InstrumentContext)
   | ({ event: "instrument_selection_change"; selectionKind: "sector"; sector: Sector } & InstrumentContext)

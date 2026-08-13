@@ -3,6 +3,7 @@ import type {
   HomeSceneContract,
   Partner,
   ProcessStage,
+  ProvingStage,
   Sector,
   TeamMember,
 } from "./model.ts";
@@ -145,6 +146,56 @@ export const processStages = [
   },
 ] as const satisfies readonly ProcessStage[];
 
+export const provingStages = [
+  {
+    id: "frame",
+    order: 1,
+    title: "Frame",
+    purpose: "Turn the operational need into a proposition that can be tested.",
+    consequence: "The unresolved specimen leaves with a defined boundary and a written proof condition.",
+    concepts: ["Operational need", "Environment", "Constraint", "Proof condition", "Test brief"],
+  },
+  {
+    id: "configure",
+    order: 2,
+    title: "Configure",
+    purpose: "Construct the conditions under which the proposition can meet reality.",
+    consequence: "The environment, field condition and instrumentation assemble around the same specimen.",
+    concepts: ["Environment", "Constraint", "Technology", "Field condition", "Instrumentation"],
+  },
+  {
+    id: "test",
+    order: 3,
+    title: "Test",
+    purpose: "Expose the technology to relevant conditions and collect observations.",
+    consequence: "The specimen carries every evidence mark forward, including limitations and resistance.",
+    concepts: ["Field test", "Conditions", "Observation", "Evidence", "Limitations"],
+  },
+  {
+    id: "resolve",
+    order: 4,
+    title: "Resolve",
+    purpose: "Turn observations into decision-grade understanding.",
+    consequence: "Conflicting tracks reconcile or terminate. Resolution is earned before the route continues.",
+    concepts: ["Evidence", "Edge case", "Limitation", "Failure", "Resolution"],
+  },
+  {
+    id: "decide",
+    order: 5,
+    title: "Decide",
+    purpose: "Convert evidence into an explicit next action.",
+    consequence: "Scale, iterate and stop remain legitimate paths. The apparatus releases an evidence object, not a predetermined answer.",
+    concepts: ["Evidence packet", "Decision gate", "Scale", "Iterate", "Stop"],
+  },
+] as const satisfies readonly ProvingStage[];
+
+export const provingRouteCopy = {
+  eyebrow: "the proving route",
+  title: "Uncertainty enters. A decision leaves.",
+  body: "One proof specimen moves through a continuous industrial route. Each operation leaves a consequence that the next stage has to carry.",
+  release: "The purpose of a POC is not activity. It is a better decision.",
+} as const;
+
 export const homeNarrativeCopy = {
   consortium: {
     eyebrow: "the consortium",
@@ -203,11 +254,11 @@ export const homeSignalAnchors = [
   { id: "evidence-criteria", order: 3, lane: "start" },
   { id: "audience-choice", order: 4, lane: "end" },
   { id: "workshop-alignment", order: 5, lane: "center" },
-  { id: "operational-need", order: 6, lane: "start" },
-  { id: "global-scouting", order: 7, lane: "end" },
-  { id: "partner-match", order: 8, lane: "center" },
-  { id: "field-poc", order: 9, lane: "start" },
-  { id: "scale-what-works", order: 10, lane: "end" },
+  { id: "frame", order: 6, lane: "center" },
+  { id: "configure", order: 7, lane: "center" },
+  { id: "test", order: 8, lane: "center" },
+  { id: "resolve", order: 9, lane: "center" },
+  { id: "decide", order: 10, lane: "center" },
   { id: "representative-challenges", order: 11, lane: "start" },
   { id: "focus-areas", order: 12, lane: "end" },
   { id: "evidence-publication", order: 13, lane: "center" },
@@ -221,7 +272,7 @@ export const homeSceneContract = [
   { id: "consortium", order: 2, mode: "full", entryAnchor: "consortium-network", exitAnchor: "evidence-criteria", internalAnchors: ["consortium-network", "evidence-criteria"], depthPx: 8 },
   { id: "audience", order: 3, mode: "light", entryAnchor: "audience-choice", exitAnchor: "audience-choice", depthPx: 6 },
   { id: "operating-model", order: 4, mode: "full", entryAnchor: "workshop-alignment", exitAnchor: "workshop-alignment", depthPx: 8 },
-  { id: "quantum-route", order: 5, mode: "full", entryAnchor: "operational-need", exitAnchor: "scale-what-works", internalAnchors: ["operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works"], depthPx: 12 },
+  { id: "quantum-route", order: 5, mode: "full", entryAnchor: "frame", exitAnchor: "decide", internalAnchors: ["frame", "configure", "test", "resolve", "decide"], depthPx: 12 },
   { id: "representative-challenges", order: 6, mode: "static", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 0 },
   { id: "focus-areas", order: 7, mode: "static", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 0 },
   { id: "evidence-resolution", order: 8, mode: "static", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 0 },

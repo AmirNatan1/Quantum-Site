@@ -73,20 +73,21 @@ test("local scene timing is derived from cached visible bounds rather than adjac
   assert.match(hook, /buildVisibleTiming\(scene\.id, measured/);
   assert.match(hook, /sceneTimings/);
   assert.match(hook, /sceneOwnership/);
-  assert.match(hook, /sequenceCoincidentHandoffs\(stageElements\.map/);
+  assert.match(hook, /sequenceCoincidentHandoffs\(stageContentElements\.map/);
   assert.doesNotMatch(hook, /lastMarker|buildSceneRanges|routeRange/);
 });
 
-test("Field POC and scouting diagrams remain explicitly non-quantitative", async () => {
-  const diagram = await read("../app/components/signal/SignalStageDiagram.tsx");
-  assert.match(diagram, /className="diagram-criteria-frame" data-diagram-part="criteria"/);
-  assert.match(diagram, /data-diagram-part="method"/);
-  assert.match(diagram, /data-diagram-part="instrumentation"/);
-  assert.doesNotMatch(diagram, /evidence-bar|reading|measurement|threshold|score|percentage|candidateCount/i);
-  assert.doesNotMatch(diagram, /Array\.from\(\{ length: \d+ \}/);
+test("the Proving Route apparatus remains explicitly non-quantitative", async () => {
+  const specimen = await read("../app/components/home/ProvingSpecimen.tsx");
+  assert.match(specimen, /data-proving-specimen/);
+  assert.match(specimen, /CONDITION/);
+  assert.match(specimen, /OBSERVE/);
+  assert.match(specimen, /REGISTER/);
+  assert.doesNotMatch(specimen, /reading|measurement|threshold|score|percentage|candidateCount/i);
+  assert.doesNotMatch(specimen, /Array\.from\(\{ length: \d+ \}/);
 });
 
-test("resolution handoff stays neutral among scale, reconfigure, and useful no", async () => {
+test("resolution handoff stays neutral among scale, iterate, and stop", async () => {
   const [path, data, hook, styles] = await Promise.all([
     read("../app/components/signal/SignalPath.tsx"),
     read("../app/data/site.ts"),
@@ -94,8 +95,8 @@ test("resolution handoff stays neutral among scale, reconfigure, and useful no",
     read("../app/styles/signal.css"),
   ]);
   assert.doesNotMatch(path, /RESOLVED_ANCHORS|is-resolved/);
-  for (const outcome of ["Scale", "Reconfigure + retest", "Useful no"]) assert.match(data, new RegExp(outcome.replace("+", "\\+")));
-  assert.match(hook, /target = processStages\[stageIndex \+ 1\]\?\.id \?\? "representative-challenges"/);
+  for (const outcome of ["Scale", "Iterate", "Stop"]) assert.match(data, new RegExp(outcome));
+  assert.match(hook, /target = provingStages\[stageIndex \+ 1\]\?\.id \?\? "representative-challenges"/);
   assert.match(styles, /\.quantum-signal-fallback i:last-child \{ height: 9px; border: 1px solid var\(--ink-600\); background: var\(--surface-panel\); \}/);
   assert.doesNotMatch(styles, /\.quantum-signal-fallback i:last-child[^}]*color-proven/s);
   assert.doesNotMatch(styles, /\.quantum-signal-fallback \{[^}]*color-proven/s);

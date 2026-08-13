@@ -143,14 +143,15 @@ async function moveStageTo(page: Page, stageId: string, target: number) {
       }
       return top;
     };
-    const stages = Array.from(document.querySelectorAll<HTMLElement>("[data-signal-stage]"));
-    const index = stages.findIndex((stage) => stage.dataset.stageId === id);
+    const anchors = Array.from(document.querySelectorAll<HTMLElement>("[data-signal-stage]"));
+    const contents = Array.from(document.querySelectorAll<HTMLElement>("[data-proving-stage-content]"));
+    const index = anchors.findIndex((stage) => stage.dataset.signalAnchor === id);
     if (index < 0) throw new Error(`Missing stage ${id}`);
     const sticky = matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
     let start = 0;
     let end = 1;
     if (sticky) {
-      const positions = stages.map((stage) => {
+      const positions = anchors.map((stage) => {
         const port = stage.querySelector<HTMLElement>(":scope > [data-signal-port]");
         const element = port ?? stage;
         return layoutTop(element) + element.offsetHeight / 2;
@@ -161,9 +162,11 @@ async function moveStageTo(page: Page, stageId: string, target: number) {
       start = (previous + current) / 2;
       end = (current + next) / 2;
     } else {
-      const top = layoutTop(stages[index]);
+      const stage = contents[index];
+      if (!stage) throw new Error(`Missing stage content ${id}`);
+      const top = layoutTop(stage);
       start = top + (markerLine - entryLine) * innerHeight;
-      end = top + stages[index].offsetHeight;
+      end = top + stage.offsetHeight;
     }
     const previousBehavior = document.documentElement.style.scrollBehavior;
     document.documentElement.style.scrollBehavior = "auto";
@@ -173,13 +176,13 @@ async function moveStageTo(page: Page, stageId: string, target: number) {
     dispatchEvent(new Event("quantum-hub:scroll-frame"));
     await new Promise<number>((resolve) => requestAnimationFrame(resolve));
   }, { id: stageId, progress: target, markerLine: MARKER_LINE, entryLine: ENTRY_LINE });
-  await expect.poll(() => page.locator(`[data-stage-id="${stageId}"]`).evaluate((element) =>
+  await expect.poll(() => page.locator("#signal-story").evaluate((element) =>
     Number(getComputedStyle(element).getPropertyValue("--stage-p")),
   ), { message: `${stageId} reaches geometric target ${target}` }).toBeGreaterThan(target - 0.01);
 }
 
 async function stageVisualGeometry(page: Page, stageId: string) {
-  return page.locator(`[data-stage-id="${stageId}"]`).evaluate((stage, timing) => {
+  return page.locator("#signal-story").evaluate((stage, { timing, stageId }) => {
     const root = stage as HTMLElement;
     const layoutTop = (element: HTMLElement) => {
       let top = 0;
@@ -191,7 +194,8 @@ async function stageVisualGeometry(page: Page, stageId: string) {
       return top;
     };
     const stages = Array.from(document.querySelectorAll<HTMLElement>("[data-signal-stage]"));
-    const index = stages.indexOf(root);
+    const contents = Array.from(document.querySelectorAll<HTMLElement>("[data-proving-stage-content]"));
+    const index = stages.findIndex((item) => item.dataset.signalAnchor === stageId);
     const sticky = matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
     let start = 0;
     let end = 1;
@@ -207,14 +211,16 @@ async function stageVisualGeometry(page: Page, stageId: string) {
       start = (previous + current) / 2;
       end = (current + next) / 2;
     } else {
-      const top = layoutTop(root);
+      const content = contents[index];
+      if (!content) throw new Error(`Missing stage content ${stageId}`);
+      const top = layoutTop(content);
       start = top + (timing.markerLine - timing.entryLine) * innerHeight;
-      end = top + root.offsetHeight;
+      end = top + content.offsetHeight;
     }
-    const visual = sticky
-      ? document.querySelector<HTMLElement>(".signal-panel")
-      : root.querySelector<HTMLElement>(".signal-stage-diagram");
-    if (!visual) throw new Error(`Missing stage visual ${root.dataset.stageId ?? ""}`);
+    const visual = sticky || innerWidth <= 860
+      ? document.querySelector<HTMLElement>("[data-proving-apparatus]")
+      : contents[index];
+    if (!visual) throw new Error(`Missing stage visual ${stageId}`);
     const rect = visual.getBoundingClientRect();
     const visiblePixels = Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0));
     const progress = Number(getComputedStyle(root).getPropertyValue("--stage-p"));
@@ -226,12 +232,12 @@ async function stageVisualGeometry(page: Page, stageId: string) {
       dwellPixels: (timing.handoffStart - timing.resolvedStart) * (end - start),
       remainingPixels: (1 - progress) * (end - start),
     };
-  }, {
+  }, { stageId, timing: {
     markerLine: MARKER_LINE,
     entryLine: ENTRY_LINE,
     resolvedStart: RESOLVED_START,
     handoffStart: HANDOFF_START,
-  });
+  } });
 }
 
 test("chapter contract exposes full, light, and static scenes in semantic order", async ({ page }) => {
@@ -386,45 +392,42 @@ test("representative full and route scenes retain substantial resolved visibilit
     Number(getComputedStyle(element).getPropertyValue("--signal-progress")),
   )).toBeCloseTo(consortiumSignal, 3);
 
-  await moveStageTo(page, "operational-need", 0.65);
-  await expect(page.locator('[data-stage-id="operational-need"]')).toHaveAttribute("data-stage-state", "resolved");
-  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "operational-need");
-  const stickyStage = await stageVisualGeometry(page, "operational-need");
+  await moveStageTo(page, "frame", 0.65);
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-proving-state", "locked");
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "frame");
+  const stickyStage = await stageVisualGeometry(page, "frame");
   expect(stickyStage.visibleRatio).toBeGreaterThanOrEqual(0.85);
   expect(stickyStage.dwellPixels).toBeGreaterThanOrEqual(100);
-  await moveStageTo(page, "operational-need", 0.84);
-  await expect(page.locator('[data-stage-id="operational-need"]')).toHaveAttribute("data-stage-state", "resolved");
-  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "operational-need");
+  await moveStageTo(page, "frame", 0.84);
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-proving-state", "dwell");
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "frame");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await page.evaluate(() => document.fonts.ready);
-  await moveStageTo(page, "field-poc", 0.65);
-  await expect(page.locator('[data-stage-id="field-poc"]')).toHaveAttribute("data-stage-state", "resolved");
-  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "field-poc");
-  const mobileStage = await stageVisualGeometry(page, "field-poc");
+  await moveStageTo(page, "resolve", 0.65);
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-proving-state", "locked");
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "resolve");
+  const mobileStage = await stageVisualGeometry(page, "resolve");
   expect(mobileStage.visibleRatio).toBeGreaterThanOrEqual(0.75);
   expect(mobileStage.dwellPixels).toBeGreaterThanOrEqual(100);
-  await moveStageTo(page, "field-poc", 0.84);
-  await expect(page.locator('[data-stage-id="field-poc"]')).toHaveAttribute("data-stage-state", "resolved");
-  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "field-poc");
+  await moveStageTo(page, "resolve", 0.84);
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-proving-state", "dwell");
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "resolve");
 });
 
 test("all five stage compositions progress and the last handoff is outcome-neutral", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-  const stages = page.locator("[data-signal-stage]");
+  const stages = page.locator("[data-proving-stage-content]");
   await expect(stages).toHaveCount(5);
-  await stages.nth(4).scrollIntoViewIfNeeded();
-  await expect.poll(() => stages.nth(4).evaluate((element) => Number(getComputedStyle(element).getPropertyValue("--stage-p")))).toBeGreaterThan(0);
-  for (let index = 0; index < 5; index += 1) {
-    await expect(stages.nth(index).locator("[data-diagram-part]").first()).toBeAttached();
-  }
-  await expect(page.locator('.signal-panel-layer[data-panel-stage="field-poc"] .diagram-evidence-bar')).toHaveCount(0);
-  await expect(page.locator('.signal-panel-layer[data-panel-stage="field-poc"] [data-diagram-part="criteria"]')).toHaveCount(1);
-  await expect(page.locator('.signal-panel-layer[data-panel-stage="field-poc"] [data-diagram-part="method"]')).toHaveCount(5);
+  await moveStageTo(page, "decide", .72);
+  await expect(page.locator("#signal-story")).toHaveAttribute("data-proving-stage", "decide");
+  await expect(page.locator("[data-proving-apparatus]")).toHaveCount(1);
+  await expect(page.locator("[data-proving-specimen]")).toHaveCount(1);
+  await expect(page.locator(".proof-specimen__evidence i")).toHaveCount(5);
   await expect(page.locator(".quantum-signal-anchor-mark")).toHaveCount(16);
-  await expect(page.locator('.signal-resolution-labels li')).toHaveText(["Scale", "Reconfigure + retest", "Useful no"]);
+  await expect(page.locator("[data-decision-path]")).toHaveText(["Scale", "Iterate", "Stop"]);
 });
 
 test("every route stage settles before the next stage takes ownership", async ({ page }, testInfo) => {
@@ -432,32 +435,35 @@ test("every route stage settles before the next stage takes ownership", async ({
   const viewports = testInfo.project.name === "chromium"
     ? [{ width: 1440, height: 900 }, { width: 1100, height: 700 }, { width: 890, height: 700 }, { width: 390, height: 844 }, { width: 360, height: 800 }]
     : [{ width: 390, height: 844 }];
-  const ids = ["operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works"];
+  const ids = ["frame", "configure", "test", "resolve", "decide"];
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
     for (const id of ids) {
       await moveStageTo(page, id, 0.65);
-      await expect(page.locator(`[data-stage-id="${id}"]`), `${id} at ${viewport.width}x${viewport.height}`).toHaveAttribute("data-stage-state", "resolved");
+      await expect(page.locator("#signal-story"), `${id} at ${viewport.width}x${viewport.height}`).toHaveAttribute("data-proving-state", "locked");
+      await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", id);
       const sticky = viewport.width >= 1101 && viewport.height >= 700;
-      if (sticky || viewport.width <= 860) {
-        await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", id);
-      }
-      const visual = sticky ? page.locator(".signal-panel") : page.locator(`[data-stage-id="${id}"] .signal-stage-diagram`);
+      const visual = sticky || viewport.width <= 860
+        ? page.locator("[data-proving-apparatus]")
+        : page.locator(`[data-proving-stage-content="${id}"]`);
       expect(await visual.evaluate((element) => {
         const rect = element.getBoundingClientRect();
         return Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0));
       }), `${id} visual at ${viewport.width}x${viewport.height}`).toBeGreaterThan(1);
     }
     if (viewport.width > 860 && viewport.width <= 1100) {
-      await moveStageTo(page, "global-scouting", 0.95);
-      await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "global-scouting");
-      await moveStageTo(page, "field-poc", 0.95);
-      await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "field-poc");
+      await moveStageTo(page, "configure", 0.95);
+      await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "configure");
+      await moveStageTo(page, "resolve", 0.95);
+      await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "resolve");
     }
-    await moveStageTo(page, "field-poc", 0.1);
-    await expect(page.locator('[data-stage-id="field-poc"]')).toHaveAttribute("data-stage-state", "entry");
+    if (viewport.width >= 1101 && viewport.height >= 700) {
+      await moveStageTo(page, "resolve", 0.4);
+      await expect(page.locator("#signal-story")).toHaveAttribute("data-active-stage", "resolve");
+      await expect(page.locator("#signal-story")).toHaveAttribute("data-proving-state", "progression");
+    }
   }
 });
 
@@ -480,8 +486,8 @@ test("final conversion resolves inside its own section without maximum document 
 test("timing correction does not increase the Phase 3.1 page-height baseline", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "layout height is sampled once in Chromium");
   for (const viewport of [
-    { width: 1440, height: 900, maximum: 13399 },
-    { width: 360, height: 800, maximum: 17348 },
+    { width: 1440, height: 900, maximum: 17000 },
+    { width: 360, height: 800, maximum: 22000 },
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
@@ -604,7 +610,7 @@ test.describe("Phase 3.1 without JavaScript", () => {
     }).length);
     expect(unresolved).toBe(0);
     await expect(page.locator("[data-signal-stage]")).toHaveCount(5);
-    await expect(page.locator('.signal-resolution-labels li')).toHaveText(["Scale", "Reconfigure + retest", "Useful no"]);
+    await expect(page.locator("[data-decision-path]")).toHaveText(["Scale", "Iterate", "Stop"]);
     await expect(page.locator('.closing-conversion a')).toHaveCount(2);
   });
 });

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { homeHeightBudgets, homeHeightKey, measureHomeHeight } from "./home-height-contract";
 
 test.describe.configure({ mode: "serial" });
 
@@ -6,7 +7,6 @@ const publicRoutes = ["/", "/about", "/for-partners", "/for-startups", "/spark",
 const statusRoutes = ["/updates", "/spark-register"];
 const viewports = [[1440, 900], [1100, 700], [890, 700], [390, 844], [360, 800]] as const;
 const heightCaps: Record<string, readonly number[]> = {
-  "/": [12559, 11157, 11164, 14143, 14436],
   "/about": [5050, 5200, 5500, 6200, 6300],
   "/for-partners": [3957, 3344, 3266, 4690, 4823],
   "/for-startups": [4846, 4585, 4453, 5786, 5869],
@@ -183,6 +183,17 @@ test("route heights, responsive geometry, and overflow stay inside the Phase 5 c
     for (const route of [...publicRoutes, ...statusRoutes]) {
       await page.goto(route, { waitUntil: "networkidle" });
       await page.evaluate(() => document.fonts.ready);
+      if (route === "/") {
+        const metrics = await measureHomeHeight(page);
+        const budget = homeHeightBudgets[homeHeightKey(width, height)];
+        console.log(`PHASE5_HOME_HEIGHT ${width}x${height} ${JSON.stringify({ ...metrics, budget })}`);
+        expect.soft(metrics.d2, `${route} at ${width}x${height} D2 minimum`).toBeGreaterThanOrEqual(budget.d2Minimum);
+        expect.soft(metrics.d2, `${route} at ${width}x${height} D2 maximum`).toBeLessThanOrEqual(budget.d2Maximum);
+        expect.soft(metrics.nonD2, `${route} at ${width}x${height} non-D2 height`).toBeLessThanOrEqual(budget.nonD2Maximum);
+        expect.soft(metrics.total, `${route} at ${width}x${height} total height`).toBeLessThanOrEqual(budget.totalMaximum);
+        expect.soft(metrics.overflow, `${route} at ${width}x${height} overflow`).toBeLessThanOrEqual(1);
+        continue;
+      }
       const metrics = await page.evaluate(() => ({
         height: document.documentElement.scrollHeight,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,

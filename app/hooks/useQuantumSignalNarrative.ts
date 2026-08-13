@@ -3,11 +3,11 @@
 import { RefObject, useEffect, useState } from "react";
 import {
   homeSceneContract,
-  processStages,
+  provingStages,
   type HomeSceneContract,
   type HomeSceneId,
   type HomeSignalAnchorId,
-  type ProcessStage,
+  type ProvingStage,
   type SignalLane,
 } from "../data";
 import { track } from "../lib/analytics";
@@ -43,7 +43,7 @@ export type SignalGeometry = {
   points: readonly SignalPoint[];
 };
 
-type StageId = ProcessStage["id"];
+type StageId = ProvingStage["id"];
 
 type NarrativeCache = {
   sceneTimings: readonly ProgressTiming<HomeSceneId>[];
@@ -65,7 +65,7 @@ const EMPTY_CACHE: NarrativeCache = {
   sceneIndex: 0,
   stageIndex: 0,
 };
-const STAGE_IDS = processStages.map((stage) => stage.id);
+const STAGE_IDS = provingStages.map((stage) => stage.id);
 const STAGE_ID_SET = new Set<StageId>(STAGE_IDS);
 const D1_LOCKED_EXIT_SCENES: ReadonlySet<HomeSceneId> = new Set([
   "hero",
@@ -74,6 +74,14 @@ const D1_LOCKED_EXIT_SCENES: ReadonlySet<HomeSceneId> = new Set([
   "operating-model",
 ]);
 const WRITE_EPSILON = 0.0025;
+
+function provingState(progress: number, handoff: number) {
+  if (handoff > 0) return "exit";
+  if (progress < SCENE_PROGRESS.entryEnd) return "entry";
+  if (progress < SCENE_PROGRESS.settleEnd) return "progression";
+  if (progress < .78) return "locked";
+  return "dwell";
+}
 
 type Cubic = {
   start: SignalPoint;
@@ -200,6 +208,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
     const anchors = Array.from(root.querySelectorAll<HTMLElement>("[data-signal-anchor]"))
       .sort((a, b) => Number(a.dataset.signalOrder) - Number(b.dataset.signalOrder));
     const stageElements = anchors.filter((anchor) => STAGE_ID_SET.has(anchor.dataset.signalAnchor as StageId));
+    const stageContentElements = Array.from(root.querySelectorAll<HTMLElement>("[data-proving-stage-content]"));
     const sceneElements = new Map<HomeSceneId, HTMLElement>();
     root.querySelectorAll<HTMLElement>("[data-scene-id]").forEach((element) => {
       sceneElements.set(element.dataset.sceneId as HomeSceneId, element);
@@ -245,7 +254,12 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         root.style.setProperty("--signal-progress", "1");
         story?.style.setProperty("--stage-p", "1");
         story?.style.setProperty("--route-progress", "1");
-        if (story) story.dataset.activeStage = STAGE_IDS.at(-1) ?? STAGE_IDS[0];
+        if (story) {
+          const lastStage = STAGE_IDS.at(-1) ?? STAGE_IDS[0];
+          story.dataset.activeStage = lastStage;
+          story.dataset.provingStage = lastStage;
+          story.dataset.provingState = "dwell";
+        }
         return;
       }
 
@@ -272,14 +286,17 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
             stageHandoff = normalizeProgress(marker, timing.handoff.start, timing.handoff.end);
           }
         });
-        const stage = processStages[stageIndex];
+        const stage = provingStages[stageIndex];
         if (story && stage) {
           if (story.dataset.activeStage !== stage.id) story.dataset.activeStage = stage.id;
+          if (story.dataset.provingStage !== stage.id) story.dataset.provingStage = stage.id;
+          const state = provingState(stageProgress, stageHandoff);
+          if (story.dataset.provingState !== state) story.dataset.provingState = state;
           story.style.setProperty("--stage-index", String(stageIndex));
           writeProgress(story, "--stage-p", stageProgress, force);
           const ownership = cache.stageOwnership[stageIndex];
           const ownershipProgress = normalizeProgress(marker, ownership.start, ownership.end);
-          writeProgress(story, "--route-progress", (stageIndex + ownershipProgress) / processStages.length, force);
+          writeProgress(story, "--route-progress", (stageIndex + ownershipProgress) / provingStages.length, force);
         }
       }
 
@@ -291,8 +308,8 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       let carrierLength = 0.028;
       let signalPhase = scene.mode === "static" || scene.id === "final-conversion" ? "quiet" : "live";
       if (scene.id === "quantum-route") {
-        const source = processStages[stageIndex]?.id ?? processStages[0].id;
-        const target = processStages[stageIndex + 1]?.id ?? "representative-challenges";
+        const source = provingStages[stageIndex]?.id ?? provingStages[0].id;
+        const target = provingStages[stageIndex + 1]?.id ?? "representative-challenges";
         const start = cache.anchorProgress.get(source) ?? signalProgress;
         const end = cache.anchorProgress.get(target) ?? start;
         signalProgress = mix(start, end, stageHandoff);
@@ -373,7 +390,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       });
       const stageTimings = stickyEligible
         ? buildPointRanges(STAGE_IDS, stagePositions).map(progressTiming)
-        : sequenceCoincidentHandoffs(stageElements.map((element, index) => {
+        : sequenceCoincidentHandoffs(stageContentElements.map((element, index) => {
           const top = documentLayoutTop(element);
           return buildVisibleTiming(
             STAGE_IDS[index],
@@ -413,7 +430,10 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
     const stageObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        const id = (entry.target as HTMLElement).dataset.signalAnchor as StageId;
+        const target = entry.target as HTMLElement;
+        const stickyEligible = window.matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
+        if (stickyEligible !== target.hasAttribute("data-proving-anchor")) return;
+        const id = (target.dataset.signalAnchor ?? target.dataset.provingStageContent) as StageId;
         if (!STAGE_ID_SET.has(id) || reached.has(id)) return;
         reached.add(id);
         track({ event: "story_stage_reached", stage: id, route: "/" });
@@ -424,7 +444,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
     resizeObserver.observe(root);
     anchors.forEach((anchor) => resizeObserver.observe(anchor));
     sceneVisuals.forEach((elements) => elements.forEach((element) => resizeObserver.observe(element)));
-    stageElements.forEach((anchor) => stageObserver.observe(anchor));
+    [...stageElements, ...stageContentElements].forEach((element) => stageObserver.observe(element));
     window.addEventListener(SCROLL_FRAME_EVENT, handleFrame);
     window.addEventListener("resize", scheduleTrailingMeasure, { passive: true });
     window.addEventListener("orientationchange", scheduleTrailingMeasure);
@@ -459,6 +479,8 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
         element.style.removeProperty("--stage-p");
         element.removeAttribute("data-stage-state");
       });
+      story?.removeAttribute("data-proving-stage");
+      story?.removeAttribute("data-proving-state");
     };
   }, [reducedMotion, rootRef]);
 

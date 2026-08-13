@@ -151,7 +151,7 @@ test("homepage heading accents are explicit and limited to two priority headings
     .map((heading) => heading.getAttribute("aria-label") ?? heading.querySelector(".sr-only")?.textContent ?? ""));
   expect(accentedHeadings).toEqual([
     "We match technology to need — and we build the test ourselves",
-    "Five stages, from need to decision",
+    "Uncertainty enters. A decision leaves.",
   ]);
   await expect(page.getByRole("heading", { name: "An industrial consortium built to test" }).locator(".title-i")).toHaveCount(0);
   await expect(page.locator(".closing-conversion h2 .title-i")).toHaveCount(0);
@@ -180,7 +180,8 @@ test("font request failure leaves headings visible and measurable", async ({ pag
   await page.route("https://fonts.gstatic.com/**", (route) => route.abort());
   await page.goto("/");
 
-  const heading = page.getByRole("heading", { level: 2, name: "Five stages, from need to decision" });
+  const route = page.locator('#signal-story.proving-route[data-scene-id="quantum-route"]');
+  const heading = route.getByRole("heading", { level: 2, name: "Uncertainty enters. A decision leaves.", exact: true });
   await heading.scrollIntoViewIfNeeded();
   await expect(heading).toBeVisible();
   await expect(heading.locator("[data-heading-reveal]")).toHaveAttribute("data-reveal-state", "visible");
@@ -193,7 +194,8 @@ test("reduced motion resolves reveal and ambient motion to final content", async
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const heading = page.getByRole("heading", { level: 2, name: "Five stages, from need to decision" });
+  const route = page.locator('#signal-story.proving-route[data-scene-id="quantum-route"]');
+  const heading = route.getByRole("heading", { level: 2, name: "Uncertainty enters. A decision leaves.", exact: true });
   await heading.scrollIntoViewIfNeeded();
   const resolved = await heading.locator(".title-word-inner").first().evaluate((element) => {
     const style = getComputedStyle(element);

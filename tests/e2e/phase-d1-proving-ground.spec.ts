@@ -8,7 +8,7 @@ const D1_PERFORMANCE_SCENE_SEQUENCE = ["hero", "consortium", "audience", "operat
 
 const anchorIds = [
   "hero-origin", "consortium-network", "evidence-criteria", "audience-choice", "workshop-alignment",
-  "operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works",
+  "frame", "configure", "test", "resolve", "decide",
   "representative-challenges", "focus-areas", "evidence-publication", "spark-next-step", "test-capability", "final-conversion",
 ] as const;
 
@@ -659,7 +659,7 @@ test("landscape and reduced-motion evidence represents distinct runtime scenes",
     { name: "hero", scene: "hero", component: ".proving-hero h1" },
     { name: "framing", scene: "consortium", component: ".framing-chamber__copy" },
     { name: "convergence", scene: "operating-model", component: ".convergence-test__copy" },
-    { name: "five-stage-entry", scene: "quantum-route", component: ".signal-story-intro" },
+    { name: "five-stage-entry", scene: "quantum-route", component: ".proving-route__intro" },
   ] as const) {
     await page.locator(state.component).evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
     await page.evaluate(() => new Promise<number>((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -745,7 +745,7 @@ test("records the authored desktop and landscape D1 sequences without post-proce
     { name: "framing", scene: "consortium", target: .642, phase: "locked", component: ".framing-apparatus" },
     { name: "convergence", scene: "operating-model", target: .642, phase: "locked", component: ".convergence-cell" },
     { name: "handoff", scene: "operating-model", target: .92, phase: "live", component: ".convergence-test__handoff" },
-    { name: "five-stage-entry", scene: "quantum-route", target: .08, phase: "live", component: ".signal-story-intro" },
+    { name: "five-stage-entry", scene: "quantum-route", target: .08, phase: "live", component: ".proving-route__intro" },
     { name: "reverse", scene: "operating-model", target: .642, phase: "locked", component: ".convergence-test__copy" },
   ]);
   await record("landscape-844x390", { width: 844, height: 390 }, [

@@ -40,6 +40,7 @@ export function AccessibleHeading({
   text,
   children,
   className,
+  id,
   reveal,
   accentI,
 }: {
@@ -47,11 +48,12 @@ export function AccessibleHeading({
   text: string;
   children?: ReactNode;
   className?: string;
+  id?: string;
   reveal?: boolean;
   accentI?: boolean;
 }) {
   return (
-    <Element aria-label={text} className={className}>
+    <Element id={id} aria-label={text} className={className}>
       <AccentHeadingText text={text} reveal={reveal ?? Element === "h2"} accentI={accentI} />
       {children}
     </Element>

@@ -1,12 +1,13 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { homeHeightBudgets, homeHeightKey, measureHomeHeight } from "./home-height-contract";
 
 const requiredViewports = [
-  { width: 1440, height: 900, maximum: 13_399, columns: 2 },
-  { width: 1100, height: 700, maximum: 12_345, columns: 2 },
-  { width: 890, height: 700, maximum: 11_945, columns: 1 },
-  { width: 390, height: 844, maximum: 17_348, columns: 1 },
-  { width: 360, height: 800, maximum: 17_348, columns: 1 },
-  { width: 320, height: 800, maximum: 17_348, columns: 1 },
+  { width: 1440, height: 900, columns: 2 },
+  { width: 1100, height: 700, columns: 2 },
+  { width: 890, height: 700, columns: 1 },
+  { width: 390, height: 844, columns: 1 },
+  { width: 360, height: 800, columns: 1 },
+  { width: 320, height: 800, columns: 1 },
 ] as const;
 
 const focusAreaLabels = [
@@ -217,11 +218,13 @@ test("required layouts remain deliberate, complete, and within height and overfl
   for (const viewport of requiredViewports) {
     await page.setViewportSize(viewport);
     const form = await openInstrument(page);
-    const metrics = await page.evaluate(() => ({
-      height: document.documentElement.scrollHeight,
-      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    }));
-    expect(metrics.height, `${viewport.width}x${viewport.height} height`).toBeLessThanOrEqual(viewport.maximum);
+    const metrics = await measureHomeHeight(page);
+    const budget = homeHeightBudgets[homeHeightKey(viewport.width, viewport.height)];
+    console.log(`PHASE4_HOME_HEIGHT ${viewport.width}x${viewport.height} ${JSON.stringify({ ...metrics, budget })}`);
+    expect(metrics.d2, `${viewport.width}x${viewport.height} D2 minimum`).toBeGreaterThanOrEqual(budget.d2Minimum);
+    expect(metrics.d2, `${viewport.width}x${viewport.height} D2 maximum`).toBeLessThanOrEqual(budget.d2Maximum);
+    expect(metrics.nonD2, `${viewport.width}x${viewport.height} non-D2 height`).toBeLessThanOrEqual(budget.nonD2Maximum);
+    expect(metrics.total, `${viewport.width}x${viewport.height} total height`).toBeLessThanOrEqual(budget.totalMaximum);
     expect(metrics.overflow, `${viewport.width}x${viewport.height} overflow`).toBeLessThanOrEqual(1);
 
     const columnCount = await form.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);

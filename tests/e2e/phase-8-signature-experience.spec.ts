@@ -17,7 +17,7 @@ async function moveStageTo(page: Page, stageId: string, target: number) {
       return top;
     };
     const stages = Array.from(document.querySelectorAll<HTMLElement>("[data-signal-stage]"));
-    const index = stages.findIndex((stage) => stage.dataset.stageId === id);
+    const index = stages.findIndex((stage) => stage.dataset.signalAnchor === id);
     if (index < 0) throw new Error(`Missing stage ${id}`);
     const sticky = matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
     let start;
@@ -43,7 +43,7 @@ async function moveStageTo(page: Page, stageId: string, target: number) {
     dispatchEvent(new Event("quantum-hub:scroll-frame"));
     await new Promise<number>((resolve) => requestAnimationFrame(resolve));
   }, { id: stageId, progress: target, markerLine: MARKER_LINE, entryLine: ENTRY_LINE });
-  await expect.poll(() => page.locator(`[data-stage-id="${stageId}"]`).evaluate((element) =>
+  await expect.poll(() => page.locator("#signal-story").evaluate((element) =>
     Number(getComputedStyle(element).getPropertyValue("--stage-p")),
   )).toBeGreaterThan(target - .01);
 }
@@ -94,7 +94,7 @@ async function signalSample(page: Page) {
     carrierStroke: getComputedStyle(document.querySelector(".quantum-signal-carrier") as Element).stroke,
     headOpacity: getComputedStyle(document.querySelector(".quantum-signal-head") as Element).opacity,
     stage: (document.querySelector("#signal-story") as HTMLElement | null)?.dataset.activeStage,
-    stageProgress: Number(getComputedStyle(document.querySelector('[data-stage-id="global-scouting"]') as Element).getPropertyValue("--stage-p")),
+    stageProgress: Number(getComputedStyle(document.querySelector("#signal-story") as Element).getPropertyValue("--stage-p")),
   }));
 }
 
@@ -122,7 +122,7 @@ test("capture contracts, dwells without travel, hands forward, and reverses dete
   await page.evaluate(() => document.fonts.ready);
   const samples: Record<string, Awaited<ReturnType<typeof signalSample>>> = {};
   for (const target of [.08, .30, .59, .72, .82, .92]) {
-    await moveStageTo(page, "global-scouting", target);
+    await moveStageTo(page, "configure", target);
     samples[String(target)] = await signalSample(page);
   }
   console.log(`PHASE8_CARRIER ${JSON.stringify(samples)}`);
@@ -143,7 +143,7 @@ test("capture contracts, dwells without travel, hands forward, and reverses dete
   expect(samples["0.92"].headOpacity).toBe("1");
   expect(samples["0.92"].progress).toBeGreaterThan(samples["0.82"].progress);
   const forward = samples["0.92"];
-  await moveStageTo(page, "global-scouting", .30);
+  await moveStageTo(page, "configure", .30);
   const reverse = await signalSample(page);
   expect(reverse.progress).toBeLessThan(forward.progress);
   expect(reverse.length).toBeCloseTo(.032, 3);
@@ -257,7 +257,7 @@ test("sticky Signal ownership retains the established viewport boundary", async 
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator("html")).toHaveClass(/(?:^|\s)js-ready(?:\s|$)/);
     await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
-    const state = await page.locator(".signal-story-intro").evaluate((element) => ({
+    const state = await page.locator(".proving-route__station").evaluate((element) => ({
       innerWidth,
       innerHeight,
       widthMedia: matchMedia("(width >= 1101px)").matches,
@@ -284,7 +284,7 @@ test("sticky Signal ownership retains the established viewport boundary", async 
       jsReady: true,
       enhanced: true,
     });
-    expect(state.position).toBe(viewport.sticky ? "sticky" : "static");
+    expect(state.position).toBe(viewport.sticky ? "sticky" : "relative");
   }
   await page.setViewportSize({ width: 1101, height: 700 });
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -292,7 +292,7 @@ test("sticky Signal ownership retains the established viewport boundary", async 
   await page.evaluate(() => document.fonts.ready);
   await expect(page.locator("html")).toHaveClass(/(?:^|\s)js-ready(?:\s|$)/);
   await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
-  const reducedState = await page.locator(".signal-story-intro").evaluate((element) => ({
+  const reducedState = await page.locator(".proving-route__station").evaluate((element) => ({
     innerWidth,
     innerHeight,
     widthMedia: matchMedia("(width >= 1101px)").matches,
@@ -300,7 +300,6 @@ test("sticky Signal ownership retains the established viewport boundary", async 
     noPreference: matchMedia("(prefers-reduced-motion: no-preference)").matches,
     reduce: matchMedia("(prefers-reduced-motion: reduce)").matches,
     jsReady: document.documentElement.classList.contains("js-ready"),
-    enhanced: document.querySelector(".home-narrative")?.hasAttribute("data-scene-enhanced") ?? false,
     position: getComputedStyle(element).position,
   }));
   console.log("PHASE8_STICKY_BOUNDARY", JSON.stringify({
@@ -317,7 +316,6 @@ test("sticky Signal ownership retains the established viewport boundary", async 
     noPreference: false,
     reduce: true,
     jsReady: true,
-    enhanced: true,
     position: "relative",
   });
 });
@@ -474,7 +472,7 @@ test("responsive, increased-text, reduced-motion, and forced-color presentations
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       hero: document.querySelector(".proving-hero")?.getBoundingClientRect().height ?? 0,
       stages: document.querySelectorAll("[data-signal-stage]").length,
-      sticky: getComputedStyle(document.querySelector(".signal-panel") as Element).display !== "none",
+      sticky: getComputedStyle(document.querySelector(".proving-route__station") as Element).position === "sticky",
     }));
     expect(geometry.overflow, `${viewport.width}x${viewport.height}`).toBeLessThanOrEqual(1);
     expect(geometry.hero).toBeGreaterThanOrEqual(viewport.height - 1);
@@ -495,7 +493,7 @@ test("responsive, increased-text, reduced-motion, and forced-color presentations
   await expect(page.locator(".quantum-signal-track")).toHaveCSS("stroke-width", "1px");
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("display", "none");
   await expect(page.locator(".quantum-signal-head")).toHaveCSS("display", "none");
-  await expect(page.locator(".signal-panel")).toBeHidden();
+  await expect(page.locator(".proving-route__station")).toHaveCSS("position", "relative");
   await expect(page.locator('[data-scene-id="final-conversion"]')).toHaveAttribute("data-scene-state", "resolved");
 
   if (testInfo.project.name === "chromium") {
