@@ -23,7 +23,7 @@ test("closed submission presentation has no form behavior", async () => {
 });
 
 test("POC universal resolutions remain structurally separate from representative challenges", async () => {
-  const source = await readFile(new URL("../app/SiteExperience.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/routes/SupportingRoutes.tsx", import.meta.url), "utf8");
   const standard = source.indexOf('className="poc-standard"');
   const catalogue = source.indexOf("<NeedsBoard />", standard);
   assert.ok(standard >= 0);

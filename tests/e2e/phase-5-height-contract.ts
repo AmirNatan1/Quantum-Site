@@ -9,14 +9,15 @@ export const supportingRouteViewports = [
 type SupportingRouteHeightCaps = readonly [number, number, number, number, number];
 
 export const supportingRouteHeightCaps = {
-  "/about": [5050, 5200, 5500, 6200, 6300],
-  "/for-partners": [3957, 3344, 3266, 4690, 4823],
-  "/for-startups": [4846, 4585, 4453, 5786, 5869],
-  "/spark": [4798, 4420, 4428, 4801, 4840],
-  "/industries": [3564, 3440, 3413, 3208, 3208],
-  "/pocs": [6251, 6293, 6303, 9651, 10026],
+  // D5 replaces the five primary route compositions and re-baselines their measured editorial height.
+  "/about": [5200, 5300, 6150, 6400, 6500],
+  "/for-partners": [4650, 4200, 4950, 5600, 5750],
+  "/for-startups": [5600, 5150, 5900, 7050, 7200],
+  "/spark": [4800, 4420, 4700, 5100, 5150],
+  "/industries": [4500, 4400, 4700, 5450, 5450],
+  "/pocs": [6900, 6400, 7300, 12450, 12900],
   "/case-studies": [2455, 2318, 2263, 2318, 2326],
-  "/updates": [1665, 1613, 1599, 1745, 1745],
+  "/updates": [1700, 1650, 1800, 2150, 2150],
   "/contact": [1872, 1817, 1811, 2326, 2326],
   "/spark-register": [1872, 1817, 1811, 2360, 2360],
 } as const satisfies Record<string, SupportingRouteHeightCaps>;

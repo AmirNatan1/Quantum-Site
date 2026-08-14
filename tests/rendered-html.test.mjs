@@ -69,9 +69,9 @@ test("homepage Problem Field does not replace the POC challenge catalogue", asyn
   assert.match(pocs, /class="needs-grid"/i);
   assert.match(pocs, /Filter representative challenges/i);
   assert.match(pocs, /These categories describe the kind of work we do\./i);
-  assert.match(pocs, /Five stages, from need to decision/i);
+  assert.match(pocs, /The test document/i);
   for (const principle of ["Criteria first", "Real environments", "An answer either way"]) assert.match(pocs, new RegExp(principle, "i"));
-  for (const resolution of ["Scale", "Reconfigure + retest", "Useful no"]) assert.ok(pocs.includes(`>${resolution}<`), resolution);
+  for (const resolution of ["Scale", "Iterate", "Stop", "Reconfigure + retest", "Useful no"]) assert.ok(pocs.includes(`>${resolution}<`), resolution);
   assert.match(pocs, /playground-static-controls/i);
 });
 
@@ -94,7 +94,7 @@ test("about server-renders the exact approved team roster", async () => {
   const normalized = html.replaceAll("<!-- -->", "").replaceAll("&amp;", "&");
   const selection = normalized.indexOf("How we decide what to work on");
   const team = normalized.indexOf("Who you&#x27;ll work with");
-  const company = normalized.indexOf("company details");
+  const company = normalized.toLowerCase().indexOf("company details");
   assert.ok(selection >= 0 && team > selection && company > team);
   assert.match(normalized, /<section[^>]+class="team-section section-pad"[^>]+aria-labelledby="about-team-heading"/i);
   assert.match(normalized, /<ul class="team-grid" data-team-roster="true">/i);

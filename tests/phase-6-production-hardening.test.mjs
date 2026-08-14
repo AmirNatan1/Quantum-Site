@@ -126,7 +126,7 @@ test("approved dormant source and its exclusive CSS families are absent", async 
     "outcome-link",
     "test-matrix",
   ]) assert.doesNotMatch(globalStyles, new RegExp(`\\.${selector}(?![\\w-])`), selector);
-  assert.match(globalStyles, /\.plain-grid-3(?![\w-])/, "plain-grid-3");
+  assert.doesNotMatch(globalStyles, /\.plain-grid-3(?![\w-])/, "D5 retires the unused generic route grid");
   for (const selector of ["form-availability", "form-error-summary", "form-submit", "honeypot"]) {
     assert.doesNotMatch(signalStyles, new RegExp(`\\.${selector}(?![\\w-])`), selector);
   }

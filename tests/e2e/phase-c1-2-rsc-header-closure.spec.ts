@@ -118,7 +118,8 @@ test("Pages RSC artifacts preserve additional named-route round trips without do
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass(/js-ready/);
 
-  for (const route of ["/for-partners", "/spark", "/pocs"]) {
+  const supportingRoutes = ["/for-startups", "/for-partners", "/industries", "/pocs", "/about"];
+  for (const route of supportingRoutes) {
     const navigation = await clickPrimaryRoute(page, route);
     if (route === "/pocs") {
       const rsc = observed.rscResponses.findLast(({ path }) => path === "/pocs.rsc");
@@ -138,5 +139,5 @@ test("Pages RSC artifacts preserve additional named-route round trips without do
     await expect(page.locator("main#main-content")).toBeFocused();
   }
 
-  expectCleanNavigation(observed, "/", ["/.rsc", "/for-partners.rsc", "/spark.rsc", "/pocs.rsc"]);
+  expectCleanNavigation(observed, "/", ["/.rsc", ...supportingRoutes.map((route) => `${route}.rsc`)]);
 });

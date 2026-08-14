@@ -16,11 +16,12 @@ const roster = [
 ] as const;
 
 const layouts = [
-  { width: 1440, height: 900, columns: 5, cap: 5050 },
-  { width: 1100, height: 700, columns: 4, cap: 5200 },
-  { width: 890, height: 700, columns: 3, cap: 5500 },
-  { width: 390, height: 844, columns: 1, cap: 6200 },
-  { width: 360, height: 800, columns: 1, cap: 6300 },
+  // D5 adds the consortium and selection surfaces around the unchanged approved roster.
+  { width: 1440, height: 900, columns: 5, cap: 5200 },
+  { width: 1100, height: 700, columns: 4, cap: 5300 },
+  { width: 890, height: 700, columns: 3, cap: 6150 },
+  { width: 390, height: 844, columns: 1, cap: 6400 },
+  { width: 360, height: 800, columns: 1, cap: 6500 },
   { width: 320, height: 800, columns: 1 },
   { width: 390, height: 844, columns: 1, textScale: true },
 ] as const;

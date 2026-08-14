@@ -94,7 +94,7 @@ test("RSC round trips retain real UI navigation and all browser projects", () =>
   const helper = helperSource();
   const roundTrip = rscSpec.slice(rscSpec.indexOf("for (const route of"));
 
-  assert.match(roundTrip, /\["\/for-partners", "\/spark", "\/pocs"\]/);
+  assert.match(roundTrip, /\["\/for-startups", "\/for-partners", "\/industries", "\/pocs", "\/about"\]/);
   assert.doesNotMatch(helper, /page\.goto|location\.|history\.pushState|evaluate\([^)]*click/);
   assert.doesNotMatch(roundTrip, /page\.goto\("\/pocs"\)|location\.|history\.pushState/);
 

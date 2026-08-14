@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { preload } from "react-dom";
 import "./globals.css";
 import "./styles/signal.css";
+import "./styles/routes.css";
 import { getConfiguredSiteUrl, OrganizationStructuredData } from "./lib/structured-data";
 
 const siteUrl = getConfiguredSiteUrl();
