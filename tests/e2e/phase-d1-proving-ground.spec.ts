@@ -236,18 +236,6 @@ test("D1 clamp ownership is narrow while SPARK keeps its local Signal sequence",
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
 
-  if (testInfo.project.name === "mobile-webkit") {
-    await moveSceneTo(page, "spark-test-transition", .70);
-    const runtime = await readSignalRuntime(page);
-    expect(runtime.sceneId).toBe("spark-test-transition");
-    expect(runtime.signalPhase).toBe("locked");
-    expect(runtime.carrierLength).toBeCloseTo(.008, 3);
-    expect(runtime.carrierStroke).toBe("rgb(24, 147, 170)");
-    expect(runtime.headOpacity).toBe(0);
-    expect(runtime.d1ClampEligible).toBe(false);
-    return;
-  }
-
   const d1States = [];
   await moveSceneTo(page, "hero", .35);
   const d1Build = await readSignalRuntime(page);
@@ -278,6 +266,16 @@ test("D1 clamp ownership is narrow while SPARK keeps its local Signal sequence",
   expect(d1Reverse.signalPhase).toBe("live");
   expect(d1Reverse.signalProgress).toBeCloseTo(d1Build.signalProgress, 3);
 
+  const d1ClampOwnedScenes = ["hero", "consortium", "audience", "operating-model"] as const;
+  const postD1Target = { scene: "focus-areas", progress: .50, phase: "live" } as const;
+  await moveSceneTo(page, postD1Target.scene, postD1Target.progress);
+  const postD1State = await readSignalRuntime(page);
+  expect(postD1State.sceneId).toBe(postD1Target.scene);
+  expect(postD1State.signalPhase).toBe(postD1Target.phase);
+  expect(d1ClampOwnedScenes).not.toContain(postD1State.sceneId);
+  expect(postD1State.d1ClampEligible).toBe(false);
+  expect(postD1State.overflow).toBeLessThanOrEqual(1);
+
   const sparkStates = [];
   for (const target of [
     { state: "live-build", scene: "spark-test-transition", progress: .35, phase: "live" },
@@ -306,16 +304,11 @@ test("D1 clamp ownership is narrow while SPARK keeps its local Signal sequence",
     if (testInfo.project.name === "chromium") await captureEvidence(page, `after/spark-${target.state}.png`);
   }
   expect(sparkStates.at(-1)?.signalProgress).toBeCloseTo(sparkStates[2].signalProgress, 3);
-
-  if (testInfo.project.name !== "mobile-webkit") {
-    for (const scene of ["focus-areas", "evidence-resolution"] as const) {
-      await moveSceneTo(page, scene, .50);
-      const runtime = await readSignalRuntime(page);
-      expect(runtime.sceneId).toBe(scene);
-      expect(runtime.signalPhase).toBe("quiet");
-      expect(runtime.d1ClampEligible).toBe(false);
-    }
-  }
+  console.log("PHASE_D1_CLAMP_SCOPE", JSON.stringify({
+    project: testInfo.project.name,
+    postD1: { requested: postD1Target, observed: postD1State },
+    spark: sparkStates,
+  }));
 
   if (testInfo.project.name === "chromium") {
     await writeEvidence("reports/signal-clamp-runtime.json", d1States);

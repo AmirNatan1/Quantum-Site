@@ -29,7 +29,7 @@ test("homepage exposes publication-safe content and the progressive story", asyn
   await expect(page.getByRole("radio", { name: /I have a technology/i })).toBeVisible();
   await expect(page.locator("[data-problem-record]")).toHaveCount(9);
   await expect(page.getByText("Representative — not an open call", { exact: true })).toBeAttached();
-  await expect(page.getByRole("heading", { name: /case library is being prepared for publication/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A written answer, against criteria agreed in advance" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
@@ -56,17 +56,19 @@ test("skip link, playground tabs and controls are keyboard operable", async ({ p
   await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
 });
 
-test("industry tabs expose roving keyboard state and a labelled panel", async ({ page }) => {
+test("focus areas expose four native, keyboard-reachable destination links", async ({ page, browserName }) => {
   await page.goto("/");
-  const tablist = page.getByRole("tablist", { name: "Industries" });
-  const tabs = tablist.getByRole("tab");
-  await tabs.first().focus();
-  await page.keyboard.press("End");
-  await expect(tabs.last()).toBeFocused();
-  await expect(tabs.last()).toHaveAttribute("aria-selected", "true");
-  const panelId = await tabs.last().getAttribute("aria-controls");
-  expect(panelId).toBeTruthy();
-  await expect(page.locator(`#${panelId}`)).toHaveAttribute("aria-labelledby", await tabs.last().getAttribute("id") ?? "");
+  const links = page.locator('[data-scene-id="focus-areas"] [data-territory] > a');
+  await expect(links).toHaveCount(4);
+  await expect(links.nth(0)).toHaveAttribute("href", "/industries#automotive");
+  await expect(links.nth(1)).toHaveAttribute("href", "/industries#logistics");
+  await expect(links.nth(2)).toHaveAttribute("href", "/industries#energy");
+  await expect(links.nth(3)).toHaveAttribute("href", "/industries#industry40");
+  await links.first().focus();
+  await expect(links.first()).toBeFocused();
+  if (browserName === "webkit") await links.nth(1).focus();
+  else await page.keyboard.press("Tab");
+  await expect(links.nth(1)).toBeFocused();
 });
 
 test("Phase 1 layouts hold at audited widths", async ({ page }) => {

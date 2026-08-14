@@ -15,9 +15,12 @@ import {
 import { AccentHeadingText } from "./components/brand/AccentHeadingText";
 import { ClosingConversion } from "./components/home/ClosingConversion";
 import { ConvergenceChamber } from "./components/home/ConvergenceChamber";
+import { EvidenceStandard } from "./components/home/EvidenceStandard";
+import { FocusTerritories } from "./components/home/FocusTerritories";
 import { InspectionFieldHero } from "./components/home/InspectionFieldHero";
 import { ProblemFramingChamber } from "./components/home/ProblemFramingChamber";
 import { ProcessStory } from "./components/home/ProcessStory";
+import { SparkActivation } from "./components/home/SparkActivation";
 import { NeedsBoard } from "./components/needs/NeedsBoard";
 import { ProblemField } from "./components/needs/ProblemField";
 import { SignalPath } from "./components/signal/SignalPath";
@@ -31,8 +34,7 @@ type RouteProps = { route: string };
 type SiteExperienceProps = RouteProps & { aboutTeam?: ReactNode };
 
 const noScriptStyles = `
-  .need-filters,.sector-tabs,.sector-display,.playground-controls[role="tablist"]{display:none!important}
-  .sector-interface{margin:0!important;border:0!important;display:block!important}
+  .need-filters,.playground-controls[role="tablist"]{display:none!important}
   @media(max-width:959px){
     .site-header{position:static!important;height:auto!important;background:#fff!important;border-color:#e7ebec!important}
     .header-inner{min-height:68px;height:auto!important;flex-wrap:wrap}
@@ -228,100 +230,31 @@ function PageHero({
   );
 }
 
-function SectorSection({ full = false }: { full?: boolean }) {
-  const [active, setActive] = useState(0);
-  const selected = sectors[active];
-  if (full) {
-    return (
-      <section className="sector-longform section-pad">
-        <div className="shell">
-          {sectors.map((sector) => (
-            <article id={sector.key} className="sector-row" key={sector.key} data-reveal="block">
-              <span>{sector.number}</span>
-              <div><Eyebrow>focus area</Eyebrow><h2><TitleText text={sector.title} /></h2></div>
-              <div><p>{sector.summary}</p></div>
-            </article>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
+function FocusAreasLongform() {
   return (
-    <section
-      className="sector-section section-pad"
-      data-scene-id="focus-areas"
-      data-scene-mode="static"
-      data-signal-anchor="focus-areas"
-      data-signal-order="12"
-      data-signal-lane="end"
-    >
-      <i className="scene-signal-port" data-signal-port aria-hidden="true" />
+    <section className="sector-longform section-pad">
       <div className="shell">
-        <SectionHeading eyebrow="focus areas" title="Four areas, and the space between them" />
-        <div className="sector-interface" data-reveal="block">
-          <div className="sector-tabs" role="tablist" aria-label="Industries">
-            {sectors.map((sector, index) => (
-              <button
-                id={`sector-tab-${index}`}
-                type="button"
-                role="tab"
-                aria-selected={active === index}
-                aria-controls="sector-tabpanel"
-                tabIndex={active === index ? 0 : -1}
-                className={active === index ? "is-active" : ""}
-                key={sector.key}
-                onClick={() => setActive(index)}
-                onKeyDown={(event) => handleTabKey(event, index, sectors.length, setActive, "sector-tab")}
-              >
-                <span>{sector.number}</span>{sector.title}
-              </button>
-            ))}
-          </div>
-          <div id="sector-tabpanel" className="sector-display" role="tabpanel" aria-labelledby={`sector-tab-${active}`}>
-            <div className="sector-radar" aria-hidden="true"><span /><span /><span /><b /></div>
-            <div className="sector-display-copy">
-              <span>FOCUS AREA / {selected.number}</span>
-              <h3><TitleText text={selected.title} /></h3>
-              <p>{selected.summary}</p>
-              <Link href={`/industries#${selected.key}`}>Explore this focus area <Arrow /></Link>
-            </div>
-          </div>
-        </div>
-        <noscript>
-          <div className="plain-grid plain-grid-4 sector-static-fallback">
-            {sectors.map((sector) => (
-              <article className="plain-card" key={sector.key}>
-                <span>{sector.number}</span>
-                <h3>{sector.title}</h3>
-                <p>{sector.summary}</p>
-                <Action href={`/industries#${sector.key}`} secondary>Explore this focus area</Action>
-              </article>
-            ))}
-          </div>
-        </noscript>
+        {sectors.map((sector) => (
+          <article id={sector.key} className="sector-row" key={sector.key} data-reveal="block">
+            <span>{sector.number}</span>
+            <div><Eyebrow>focus area</Eyebrow><h2><TitleText text={sector.title} /></h2></div>
+            <div><p>{sector.summary}</p></div>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
 
-function EvidenceEmptyState({ compact = false }: { compact?: boolean }) {
+function EvidenceEmptyState() {
   return (
     <section
-      className={`evidence-empty${compact ? " evidence-empty-compact" : ""}`}
-      aria-labelledby={compact ? "home-evidence-title" : "evidence-empty-title"}
-      {...(compact ? {
-        "data-scene-id": "evidence-resolution",
-        "data-scene-mode": "static",
-        "data-signal-anchor": "evidence-publication",
-        "data-signal-order": "13",
-        "data-signal-lane": "center",
-      } : {})}
+      className="evidence-empty"
+      aria-labelledby="evidence-empty-title"
     >
-      {compact ? <i className="scene-signal-port" data-signal-port aria-hidden="true" /> : null}
       <div className="shell" data-reveal="block">
         <Eyebrow>results</Eyebrow>
-        <h2 id={compact ? "home-evidence-title" : "evidence-empty-title"}><TitleText text="Our case library is being prepared for publication" reveal /></h2>
+        <h2 id="evidence-empty-title"><TitleText text="Our case library is being prepared for publication" reveal /></h2>
         <p>Each case is reviewed with the startup and the partner before we publish it. In the meantime, the method behind them is documented in full.</p>
         <Action href="/pocs" secondary>See how a POC is designed</Action>
       </div>
@@ -359,30 +292,6 @@ function PlaygroundPanel() {
         </div>
       </noscript>
     </div>
-  );
-}
-
-function SparkBand() {
-  return (
-    <section
-      className="spark-band"
-      data-signal-anchor="spark-next-step"
-      data-signal-order="14"
-      data-signal-lane="start"
-    >
-      <i className="scene-signal-port" data-signal-port aria-hidden="true" />
-      <div className="shell spark-layout">
-        <div data-reveal="block">
-          <Eyebrow inverse>for startups</Eyebrow>
-          <h2><TitleText text="SPARK: a POC runway with a partner who wants the answer" reveal /></h2>
-        </div>
-        <div data-reveal="block">
-          <p>SPARK is a thirteen-week programme for MVP+ startups. It is equity-free and there is no participation fee. Application dates are not currently published.</p>
-          <Action href="/spark" inverse>How SPARK works</Action>
-        </div>
-        <div className="spark-orbit" aria-hidden="true"><span /><i /><b /></div>
-      </div>
-    </section>
   );
 }
 
@@ -438,26 +347,9 @@ function HomePage() {
         <i className="scene-signal-port" data-signal-port aria-hidden="true" />
         <ProblemField />
       </div>
-      <SectorSection />
-      <EvidenceEmptyState compact />
-      <div className="spark-test-scene" data-scene-id="spark-test-transition" data-scene-mode="light" data-scene-visual>
-        <SparkBand />
-        <section
-          className="playground-section section-pad"
-          data-signal-anchor="test-capability"
-          data-signal-order="15"
-          data-signal-lane="end"
-        >
-          <i className="scene-signal-port" data-signal-port aria-hidden="true" />
-          <div className="shell playground-layout">
-            <div>
-              <SectionHeading eyebrow="test capability" title="A workshop, an instrumented vehicle, and access to working sites" body="Our workshop builds mounts, wiring, power, integration and isolated test networks. The instrumented Kia EV6 provides a vehicle platform, and partner environments support tests that cannot be simulated." />
-              <Action href="/pocs" secondary>What we can test</Action>
-            </div>
-            <PlaygroundPanel />
-          </div>
-        </section>
-      </div>
+      <FocusTerritories />
+      <EvidenceStandard />
+      <SparkActivation />
       <ClosingConversion />
     </div>
   );
@@ -522,7 +414,7 @@ function IndustriesPage() {
   return (
     <>
       <PageHero eyebrow="focus areas" title="Four areas, and the space between them" body="Our partners operate across automotive and mobility, logistics, energy, and Industry 4.0. The work often sits in the overlap between them." />
-      <SectorSection full />
+      <FocusAreasLongform />
       <ClosingCTA title="What this looks like in practice" href="/#representative-challenges" label="See representative challenges" />
     </>
   );

@@ -209,7 +209,13 @@ test("reduced motion resolves reveal and ambient motion to final content", async
   await expect(page.locator(".quantum-signal-head")).toHaveCSS("display", "none");
   await expect(page.locator(".inspection-field__substrate")).toHaveCSS("animation-name", "none");
   await expect(page.locator(".inspection-field__substrate")).toHaveCSS("mask-image", "none");
-  await expect(page.locator(".scan-line")).toHaveCSS("animation-name", "none");
+  await expect(page.locator(".focus-territories__station")).toHaveCSS("position", "relative");
+  await expect(page.locator(".evidence-standard__station")).toHaveCSS("position", "relative");
+  const d4Motion = await page.locator("[data-d4-chapter]").evaluateAll((chapters) => chapters
+    .flatMap((chapter) => Array.from(chapter.querySelectorAll("*")))
+    .flatMap((element) => element.getAnimations())
+    .filter((animation) => animation.playState === "running").length);
+  expect(d4Motion).toBe(0);
 });
 
 test.describe("without JavaScript", () => {
@@ -225,6 +231,6 @@ test.describe("without JavaScript", () => {
       return style.opacity === "0" || style.visibility === "hidden" || style.display === "none";
     }).length);
     expect(unresolved).toBe(0);
-    await expect(page.getByRole("heading", { name: "Our case library is being prepared for publication" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "A written answer, against criteria agreed in advance" })).toBeVisible();
   });
 });

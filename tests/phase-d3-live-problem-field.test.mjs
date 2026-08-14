@@ -31,7 +31,7 @@ test("D3 replaces the decision instrument with one persistent, non-interactive f
   ]);
 
   assert.ok(site.indexOf("<ProcessStory") < site.indexOf('data-scene-id="representative-challenges"'));
-  assert.ok(site.indexOf('data-scene-id="representative-challenges"') < site.indexOf("<SectorSection"));
+  assert.ok(site.indexOf('data-scene-id="representative-challenges"') < site.indexOf("<FocusTerritories"));
   assert.match(site, /data-problem-field/);
   assert.match(site, /data-scene-mode="full"/);
   assert.match(field, /data-problem-field-visual/);

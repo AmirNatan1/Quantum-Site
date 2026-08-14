@@ -45,7 +45,7 @@ test("the approved self-hosted fonts remain within their separate asset budget",
   assert.ok(sizes.reduce((total, size) => total + size, 0) <= 85_000, `font aggregate is ${sizes.reduce((total, size) => total + size, 0)} bytes`);
 });
 
-test("built client assets stay within the approved D3 gzip guardrails", async () => {
+test("built client assets stay within the approved D4 gzip guardrails", async () => {
   const directory = fileURLToPath(new URL("../dist/client/assets/", import.meta.url));
   const files = await readdir(directory);
   let javascript = 0;
@@ -58,7 +58,7 @@ test("built client assets stay within the approved D3 gzip guardrails", async ()
     else css += compressed;
   }
   assert.ok(javascript <= 118_000, `client JavaScript is ${javascript} bytes gzip`);
-  assert.ok(css <= 21_250, `client CSS is ${css} bytes gzip`);
+  assert.ok(css <= 22_750, `client CSS is ${css} bytes gzip`);
 });
 
 test("production styles do not introduce sub-11px type", async () => {

@@ -417,7 +417,7 @@ export function useQuantumSignalNarrative(rootRef: RefObject<HTMLElement | null>
       const sceneHandoff = normalizeProgress(marker, sceneTiming.handoff.start, sceneTiming.handoff.end);
       let signalProgress = signalProgressForScene(scene, sceneIndex, sceneProgress, sceneHandoff, cache.anchorProgress);
       let carrierLength = 0.028;
-      let signalPhase = scene.mode === "static" || scene.id === "final-conversion" ? "quiet" : "live";
+      let signalPhase = scene.id === "final-conversion" ? "quiet" : "live";
       if (scene.id === "quantum-route") {
         const source = provingStages[stageIndex]?.id ?? provingStages[0].id;
         const target = provingStages[stageIndex + 1]?.id ?? "representative-challenges";

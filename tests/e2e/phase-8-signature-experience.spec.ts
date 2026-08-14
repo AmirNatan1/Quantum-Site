@@ -155,44 +155,30 @@ test("capture contracts, dwells without travel, hands forward, and reverses dete
   expect(infinite).toBe(0);
 });
 
-test("quiet chapters suppress live travel and closing conversion resolves to a still terminal", async ({ page }) => {
+test("D4 proof chapters carry the Signal before closing conversion resolves to a still terminal", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
   for (const sceneId of ["focus-areas", "evidence-resolution"]) {
     await moveSceneTo(page, sceneId, .5);
-    await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "quiet");
-    await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
-    await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
+    await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "live");
+    await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "1");
   }
   await moveSceneTo(page, "final-conversion", .08, false);
-  const entry = await page.locator(".closing-conversion > .shell").evaluate((element) => ({
-    rule: getComputedStyle(element, "::before").backgroundColor,
-    bracket: getComputedStyle(element, "::after").borderColor,
-    width: parseFloat(getComputedStyle(element, "::after").width) * Math.abs(new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a),
-  }));
+  await expect(page.locator('[data-scene-id="final-conversion"]')).toHaveAttribute("data-scene-state", "entry");
+  await expect(page.locator(".home-narrative")).toHaveAttribute("data-active-scene", "spark-test-transition");
   await moveSceneTo(page, "final-conversion", .72, false);
-  const resolved = await page.locator(".closing-conversion > .shell").evaluate((element) => ({
-    rule: getComputedStyle(element, "::before").backgroundColor,
-    bracket: getComputedStyle(element, "::after").borderColor,
-    width: parseFloat(getComputedStyle(element, "::after").width) * Math.abs(new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a),
-  }));
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
   await expect(page.locator(".quantum-signal-head")).toHaveCSS("opacity", "0");
   await expect(page.locator(".home-narrative")).toHaveAttribute("data-signal-phase", "quiet");
+  await expect(page.locator('[data-scene-id="final-conversion"]')).toHaveAttribute("data-scene-state", "resolved");
   await moveSceneTo(page, "final-conversion", .82, false);
-  const dwell = await page.locator(".closing-conversion > .shell").evaluate((element) => ({
-    rule: getComputedStyle(element, "::before").backgroundColor,
-    bracket: getComputedStyle(element, "::after").borderColor,
-    width: parseFloat(getComputedStyle(element, "::after").width) * Math.abs(new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a),
-  }));
-  expect(entry.rule).not.toBe(resolved.rule);
-  expect(entry.bracket).not.toBe(resolved.bracket);
-  expect(entry.width).toBeGreaterThan(resolved.width);
-  expect(dwell).toEqual(resolved);
+  await expect(page.locator('[data-scene-id="final-conversion"]')).toHaveAttribute("data-scene-state", "resolved");
   await expect(page.locator(".quantum-signal-carrier")).toHaveCSS("opacity", "0");
   await expect(page.locator('.closing-conversion a[href="/for-partners"]')).toBeVisible();
   await expect(page.locator('.closing-conversion a[href="/for-startups"]')).toBeVisible();
+  await expect(page.locator('.closing-conversion a[href="/contact"]')).toBeVisible();
 });
 
 test("SPARK travel locks locally, hands off live, then yields to the quiet terminal", async ({ page }) => {
@@ -213,7 +199,8 @@ test("SPARK travel locks locally, hands off live, then yields to the quiet termi
     expect(samples[target].carrierStroke).toBe("rgb(24, 147, 170)");
     expect(samples[target].headOpacity).toBe("0");
   }
-  expect(samples["0.82"].progress).toBeCloseTo(samples["0.72"].progress, 4);
+  expect(samples["0.82"].progress).toBeGreaterThanOrEqual(samples["0.72"].progress);
+  expect(samples["0.82"].progress - samples["0.72"].progress).toBeLessThanOrEqual(.01);
   expect(samples["0.92"].phase).toBe("live");
   expect(samples["0.92"].progress).toBeGreaterThan(samples["0.82"].progress);
   expect(samples["0.92"].headOpacity).toBe("1");

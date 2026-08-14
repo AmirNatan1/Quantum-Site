@@ -310,11 +310,10 @@ test.describe("without JavaScript", () => {
     await page.goto("/");
     await expect(page.locator(".convergence-routes input").first()).toBeVisible();
     await expect(page.locator(".convergence-routes article")).toHaveCount(2);
-    await expect(page.locator(".sector-tabs")).toBeHidden();
-    await expect(page.locator(".sector-display")).toBeHidden();
-    await expect(page.locator(".sector-static-fallback .plain-card")).toHaveCount(4);
-    await expect(page.locator('.playground-controls[role="tablist"]')).toBeHidden();
-    await expect(page.locator(".playground-static-controls article")).toHaveCount(3);
+    await expect(page.locator('[data-d4-chapter="focus"] [data-territory]')).toHaveCount(4);
+    await expect(page.locator('[data-d4-chapter="evidence"] [data-evidence-register]')).toHaveCount(5);
+    await expect(page.locator('[data-d4-chapter="spark"] [data-spark-relationship]')).toHaveCount(4);
+    await expect(page.locator('[data-d4-chapter="conversion"] [data-conversion-path]')).toHaveCount(3);
     await expect(page.locator("[data-problem-field]")).toBeVisible();
     await expect(page.locator("[data-problem-record]")).toHaveCount(9);
 

@@ -33,11 +33,12 @@ test("Phase 8 keeps one sixteen-anchor Signal and replaces the historical stroke
 });
 
 test("D1 remains intact while the accepted terminal systems continue after D2", async () => {
-  const [site, styles, globals, closing, manifest, hero, framing, convergence, route, specimen] = await Promise.all([
+  const [site, styles, globals, closing, data, manifest, hero, framing, convergence, route, specimen] = await Promise.all([
     read("../app/SiteExperience.tsx"),
     read("../app/styles/signal.css"),
     read("../app/globals.css"),
     read("../app/components/home/ClosingConversion.tsx"),
+    read("../app/data/site.ts"),
     read("../package.json"),
     read("../app/components/home/InspectionFieldHero.tsx"),
     read("../app/components/home/ProblemFramingChamber.tsx"),
@@ -58,10 +59,11 @@ test("D1 remains intact while the accepted terminal systems continue after D2", 
   assert.match(specimen, /data-proving-specimen/);
   assert.match(styles, /\.proving-route\[data-proving-stage="test"\] \.proving-machine__test-bands/);
   assert.match(styles, /data-proving-state="dwell"/);
-  assert.match(styles, /\.closing-conversion > \.shell::before[^}]*var\(--color-proven\)/);
-  assert.match(styles, /html\.js-ready \.closing-conversion:is\(\[data-scene-state="entry"\], \[data-scene-state="progression"\]\)[^}]*var\(--color-live\)/);
-  assert.match(closing, /href="\/for-partners"/);
-  assert.match(closing, /href="\/for-startups"/);
+  assert.match(styles, /\.closing-conversion__resolution > span[^}]*var\(--color-proven\)/);
+  assert.match(styles, /\.closing-conversion__paths \[data-preferred="true"\][^}]*var\(--color-live\)/);
+  assert.match(closing, /data-conversion-path/);
+  assert.match(data, /href: "\/for-partners"/);
+  assert.match(data, /href: "\/for-startups"/);
   assert.doesNotMatch(styles, /@keyframes|animation-(?:duration|iteration-count)/);
   assert.doesNotMatch(site + globals, /scroll-progress|data-scroll-progress/);
   assert.doesNotMatch(site + globals, /page-orbit|orbitDot/);
@@ -88,7 +90,7 @@ test("quiet chapters, reduced motion, no-JavaScript, and forced colors retain di
   assert.match(styles, /data-signal-phase="locked"[^}]*\.quantum-signal-carrier/);
   assert.doesNotMatch(styles, /data-signal-phase="locked"[^}]*\.quantum-signal-head[^}]*opacity:\s*1/);
   assert.doesNotMatch(styles, /data-active-scene=/);
-  assert.match(hook, /scene\.mode === "static" \|\| scene\.id === "final-conversion" \? "quiet" : "live"/);
+  assert.match(hook, /scene\.id === "final-conversion" \? "quiet" : "live"/);
   assert.match(hook, /signalPhase = "locked"/);
   assert.match(hook, /root\.dataset\.signalPhase !== signalPhase/);
   assert.match(hook, /removeAttribute\("data-signal-phase"\)/);
@@ -96,7 +98,7 @@ test("quiet chapters, reduced motion, no-JavaScript, and forced colors retain di
   assert.match(styles, /html:not\(\.js-ready\) \.proving-route__scroll-track/);
   assert.match(styles, /\.quantum-signal-fallback/);
   assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.quantum-signal-carrier/);
-  assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.closing-conversion > \.shell::before/);
+  assert.match(styles, /@media \(forced-colors: active\)[\s\S]*\.closing-conversion__resolution > span/);
 });
 
 test("the sticky Signal boundary waits for enhanced homepage readiness before measuring position", async () => {

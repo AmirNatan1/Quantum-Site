@@ -80,6 +80,36 @@ test("D1 owns exactly four locked-exit clamps without frame-path allocation", as
   assert.doesNotMatch(framePath, /new\s+(?:Array|Map|Set|WeakMap|WeakSet)\b/);
 });
 
+test("the D1 clamp browser contract hands semantic ownership to D4 before SPARK", async () => {
+  const [source, d4Source] = await Promise.all([
+    read("e2e/phase-d1-proving-ground.spec.ts"),
+    read("e2e/phase-8-signature-experience.spec.ts"),
+  ]);
+  const helperStart = source.indexOf("async function moveSceneTo");
+  const helperEnd = source.indexOf('\ntest("D1 is one semantic homepage', helperStart);
+  const helper = source.slice(helperStart, helperEnd);
+  const testStart = source.indexOf('test("D1 clamp ownership is narrow while SPARK keeps its local Signal sequence"');
+  const testEnd = source.indexOf('\ntest("intermediate partner and lock geometry', testStart);
+  const block = source.slice(testStart, testEnd);
+
+  assert.ok(helperStart >= 0 && helperEnd > helperStart);
+  assert.ok(testStart >= 0 && testEnd > testStart);
+  assert.match(block, /const d1ClampOwnedScenes = \["hero", "consortium", "audience", "operating-model"\] as const;/);
+  assert.match(block, /const postD1Target = \{ scene: "focus-areas", progress: \.50, phase: "live" \} as const;/);
+  assert.ok(block.indexOf("const postD1Target") < block.indexOf("const sparkStates"));
+  assert.match(block, /expect\(d1ClampOwnedScenes\)\.not\.toContain\(postD1State\.sceneId\)/);
+  assert.match(block, /expect\(postD1State\.d1ClampEligible\)\.toBe\(false\)/);
+  assert.match(block, /state: "locked-dwell", scene: "spark-test-transition", progress: \.70, phase: "locked"/);
+  assert.match(block, /state: "reverse-live", scene: "spark-test-transition", progress: \.92, phase: "live"/);
+  assert.match(helper, /document\.querySelector<HTMLElement>\(`\[data-scene-id="\$\{id\}"\]`\)/);
+  assert.match(helper, /scrollTo\(0, start \+ \(end - start\) \* progress - innerHeight \* markerLine\)/);
+  assert.doesNotMatch(helper, /scrollHeight|document\.body/);
+  assert.doesNotMatch(block, /timeout\s*:|retries?\s*:/);
+  assert.doesNotMatch(block, /dataset\.activeScene\s*=|setAttribute\("data-active-scene"|setProperty\("--scene-p"/);
+  assert.match(d4Source, /for \(const sceneId of \["focus-areas", "evidence-resolution"\]\)/);
+  assert.match(d4Source, /toHaveAttribute\("data-signal-phase", "live"\)/);
+});
+
 test("the old D1 presentation components are removed", async () => {
   for (const relativePath of [
     "../app/components/home/ConsortiumChapter.tsx",

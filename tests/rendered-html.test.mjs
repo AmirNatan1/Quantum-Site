@@ -52,7 +52,7 @@ test("server-renders the publication-safe Quantum Hub homepage", async () => {
   assert.match(html, /Live Problem Field/i);
   assert.match(html, /Representative — not an open call/i);
   assert.equal((html.match(/data-problem-record(?:="(?:true)?")?/gi) ?? []).length, 9);
-  assert.match(html, /Our case library is being prepared for publication/i);
+  assert.match(html, /The method behind the work is shown here without case results/i);
   assert.doesNotMatch(html, /<video\b|hero-quantum-hub|og-signal/i);
   assert.doesNotMatch(html, /<textarea\b|<input[^>]+type="(?:text|email|tel|file)"/i);
   assert.doesNotMatch(html, /<link rel="canonical"|property="og:image"/i);

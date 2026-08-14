@@ -156,63 +156,49 @@ async function measureConvergenceGeometry(page: Page) {
   });
 }
 
-async function expectFocusAreaNodeClear(page: Page, context: string) {
-  const geometry = await page.locator('[data-scene-id="focus-areas"]').evaluate(async (scene) => {
-    const tabs = Array.from(scene.querySelectorAll<HTMLButtonElement>(".sector-tabs [role=tab]"));
-    const results = [];
-    for (const tab of tabs) {
-      tab.click();
-      await new Promise<number>((resolve) => requestAnimationFrame(resolve));
-      const node = scene.querySelector(".sector-radar span:nth-child(3)")?.getBoundingClientRect();
-      const labels = Array.from(scene.querySelectorAll(".sector-display-copy h3 .title-word"), (word) => word.getBoundingClientRect());
-      if (!node) return null;
-      const clearance = 8;
-      results.push({
-        selected: tab.getAttribute("aria-selected") === "true",
-        overlap: labels.some((label) => (
-          node.left - clearance < label.right
-          && node.right + clearance > label.left
-          && node.top - clearance < label.bottom
-          && node.bottom + clearance > label.top
-        )),
-      });
-    }
+async function expectFocusAreaBandsClear(page: Page, context: string) {
+  const geometry = await page.locator('[data-scene-id="focus-areas"]').evaluate((scene) => {
+    const links = Array.from(scene.querySelectorAll<HTMLElement>("[data-territory] > a"));
+    const rows = links.map((link) => {
+      const rect = link.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+    });
     return {
-      results,
+      rows,
+      hrefs: links.map((link) => link.getAttribute("href")),
+      legacyControls: scene.querySelectorAll('[role="tab"], [role="tablist"], button').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
   });
-  expect(geometry, `${context} geometry`).not.toBeNull();
-  expect(geometry?.results).toHaveLength(4);
-  expect(geometry?.results.every(({ selected }) => selected), `${context} selected state`).toBe(true);
-  expect(geometry?.results.some(({ overlap }) => overlap), `${context} node clearance`).toBe(false);
-  expect(geometry?.overflow, `${context} overflow`).toBeLessThanOrEqual(1);
+  expect(geometry.rows, `${context} rows`).toHaveLength(4);
+  expect(geometry.hrefs, `${context} destinations`).toEqual([
+    "/industries#automotive",
+    "/industries#logistics",
+    "/industries#energy",
+    "/industries#industry40",
+  ]);
+  expect(geometry.legacyControls, `${context} legacy controls`).toBe(0);
+  expect(geometry.rows.every(({ width, height }) => width > 0 && height >= 44), `${context} link targets`).toBe(true);
+  expect(geometry.rows.slice(1).every((row, index) => row.top >= geometry.rows[index].bottom - 1), `${context} row collisions`).toBe(true);
+  expect(geometry.overflow, `${context} overflow`).toBeLessThanOrEqual(1);
 }
 
-test("focus-area radar node stays clear of every sector label", async ({ page }) => {
+test("focus-area territory bands remain native and collision free", async ({ page }) => {
   test.slow();
   for (const viewport of focusAreaViewports) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
     const scene = page.locator('[data-scene-id="focus-areas"]');
-    const interfacePanel = scene.locator(".sector-interface");
-
-    await expect(interfacePanel).toHaveAttribute("data-reveal-state", "prepared");
-    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} prepared`);
-
     await scene.scrollIntoViewIfNeeded();
-    await expect(interfacePanel).toHaveAttribute("data-reveal-state", "visible");
-    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} progressing`);
-    await page.waitForTimeout(700);
-    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} resolved`);
+    await expectFocusAreaBandsClear(page, `${viewport.width}x${viewport.height} forward`);
 
     await page.evaluate(() => {
       scrollTo({ top: 0, behavior: "auto" });
       dispatchEvent(new Event("quantum-hub:scroll-frame"));
     });
     await page.evaluate(() => new Promise<number>((resolve) => requestAnimationFrame(resolve)));
-    await expectFocusAreaNodeClear(page, `${viewport.width}x${viewport.height} reverse`);
+    await expectFocusAreaBandsClear(page, `${viewport.width}x${viewport.height} reverse`);
   }
 });
 
@@ -236,22 +222,76 @@ test("continuous signal follows the complete ordered contract and regenerates on
 test("signal progress is native-scroll driven and reversible", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
   await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
-  const progress = async () => Number(await page.locator(".home-narrative").evaluate((element) => getComputedStyle(element).getPropertyValue("--signal-progress")));
+  const sceneId = "quantum-route";
+  const scene = page.locator(`[data-scene-id="${sceneId}"]`);
+  const root = page.locator(".home-narrative");
+  const state = async () => scene.evaluate((element) => {
+    const narrative = element.closest<HTMLElement>(".home-narrative");
+    return {
+      scrollY,
+      sceneProgress: Number(getComputedStyle(element).getPropertyValue("--scene-p")),
+      signalProgress: Number(getComputedStyle(narrative!).getPropertyValue("--signal-progress")),
+      activeScene: narrative?.dataset.activeScene,
+      signalPhase: narrative?.dataset.signalPhase,
+    };
+  });
+  const progress = async () => (await state()).sceneProgress;
+  const moveSceneTo = async (targetProgress: number) => page.evaluate(async ({ id, target }) => {
+    const markerLine = .52;
+    const entryLine = .88;
+    const exitLine = .22;
+    const owningScene = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
+    if (!owningScene) throw new Error(`Missing ${id} scene`);
+
+    const layoutTop = (element: HTMLElement) => {
+      let top = 0;
+      let current: HTMLElement | null = element;
+      while (current) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      return top;
+    };
+    const declared = Array.from(owningScene.querySelectorAll<HTMLElement>("[data-scene-visual]"));
+    if (owningScene.hasAttribute("data-scene-visual")) declared.unshift(owningScene);
+    const measured = declared.length > 0 ? declared : [owningScene];
+    const bounds = measured.reduce((result, element) => {
+      const top = layoutTop(element);
+      return {
+        top: Math.min(result.top, top),
+        bottom: Math.max(result.bottom, top + element.offsetHeight),
+      };
+    }, { top: Number.POSITIVE_INFINITY, bottom: Number.NEGATIVE_INFINITY });
+    const start = bounds.top + (markerLine - entryLine) * innerHeight;
+    const end = bounds.bottom + (markerLine - exitLine) * innerHeight;
+    const requestedY = start + (end - start) * target - innerHeight * markerLine;
+    const previousBehavior = document.documentElement.style.scrollBehavior;
+
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo({ top: requestedY, behavior: "auto" });
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    window.dispatchEvent(new Event("quantum-hub:scroll-frame"));
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    document.documentElement.style.scrollBehavior = previousBehavior;
+    return { requestedY, scrollY };
+  }, { id: sceneId, target: targetProgress });
+
   const start = await progress();
-  await page.evaluate(() => {
-    const target = document.querySelector('[data-signal-anchor="decide"]');
-    if (target) window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY, behavior: "auto" });
-    window.dispatchEvent(new Event("quantum-hub:scroll-frame"));
-  });
+  const forwardMove = await moveSceneTo(.72);
+  expect(Math.abs(forwardMove.scrollY - forwardMove.requestedY)).toBeLessThanOrEqual(1);
   await expect.poll(progress).toBeGreaterThan(start + 0.25);
+  await expect(root).toHaveAttribute("data-active-scene", sceneId);
   const forward = await progress();
-  await page.evaluate(() => {
-    const target = document.querySelector('[data-signal-anchor="audience-choice"]');
-    if (target) window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY, behavior: "auto" });
-    window.dispatchEvent(new Event("quantum-hub:scroll-frame"));
-  });
+  const forwardState = await state();
+  const reverseMove = await moveSceneTo(.28);
+  expect(reverseMove.scrollY).toBeLessThan(forwardMove.scrollY);
+  expect(Math.abs(reverseMove.scrollY - reverseMove.requestedY)).toBeLessThanOrEqual(1);
   await expect.poll(progress).toBeLessThan(forward - 0.2);
+  await expect(root).toHaveAttribute("data-active-scene", sceneId);
+  const reverseState = await state();
+  expect(reverseState.signalProgress).toBeLessThan(forwardState.signalProgress);
 });
 
 test("homepage hashes settle below the fixed header after fonts resolve", async ({ page }) => {
@@ -370,31 +410,153 @@ test("touch selection applies the same reversible audience state", async ({ page
   await expect(page.locator('.closing-conversion[data-audience="startup"]')).toBeVisible();
 });
 
-test("analytics emits only bounded audience, stage, and final CTA payloads", async ({ page }) => {
+test("analytics emits only bounded audience, stage, and final CTA payloads", async ({ page }, testInfo) => {
   await page.addInitScript(() => {
     const target = window as Window & { __phase3Events?: unknown[]; quantumAnalytics?: (payload: unknown) => void };
     target.__phase3Events = [];
     target.quantumAnalytics = (payload) => target.__phase3Events?.push(payload);
   });
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator(".home-narrative")).toHaveAttribute("data-scene-enhanced", "");
   await page.getByRole("radio", { name: "I have an operational need" }).check();
-  await page.evaluate(() => {
+  const audienceEvent = { event: "audience_select", audience: "partner", route: "/", placement: "audience_selector" };
+  await expect.poll(() => page.evaluate((expected) => (
+    (window as Window & { __phase3Events?: Record<string, unknown>[] }).__phase3Events
+      ?.some((payload) => JSON.stringify(payload) === JSON.stringify(expected))
+  ), audienceEvent)).toBe(true);
+
+  const preStage = await page.evaluate(() => ({
+    activeStage: document.querySelector<HTMLElement>("#signal-story")?.dataset.activeStage,
+    testEvents: ((window as Window & { __phase3Events?: { event?: string; stage?: string }[] }).__phase3Events ?? [])
+      .filter(({ event, stage }) => event === "story_stage_reached" && stage === "test").length,
+  }));
+  expect(preStage.activeStage).not.toBe("test");
+  expect(preStage.testEvents).toBe(0);
+
+  const stageTarget = await page.evaluate(async () => {
+    const markerLine = .52;
+    const targetProgress = .50;
     const sticky = matchMedia("(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches;
-    const target = document.querySelector(sticky
-      ? '[data-signal-anchor="test"]'
-      : '[data-proving-stage-content="test"]');
-    target?.scrollIntoView({ block: "center", behavior: "auto" });
+    const layoutTop = (element: HTMLElement) => {
+      let top = 0;
+      let current: HTMLElement | null = element;
+      while (current) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      return top;
+    };
+    let start = 0;
+    let end = 0;
+
+    if (sticky) {
+      const anchors = Array.from(document.querySelectorAll<HTMLElement>("#signal-story [data-proving-anchor]"));
+      const index = anchors.findIndex((element) => element.dataset.provingAnchor === "test");
+      if (index < 0) throw new Error("Missing test stage anchor");
+      const positions = anchors.map((element) => {
+        const port = element.querySelector<HTMLElement>(":scope > [data-signal-port]");
+        return port && port.offsetHeight > 0
+          ? layoutTop(port) + port.offsetHeight / 2
+          : layoutTop(element) + element.offsetHeight / 2;
+      });
+      const current = positions[index];
+      const previous = positions[index - 1] ?? current - Math.max(1, (positions[index + 1] ?? current + 1) - current);
+      const next = positions[index + 1] ?? current + Math.max(1, current - previous);
+      start = (previous + current) / 2;
+      end = (current + next) / 2;
+    } else {
+      const content = document.querySelector<HTMLElement>('#signal-story [data-proving-stage-content="test"]');
+      if (!content) throw new Error("Missing test stage content");
+      const top = layoutTop(content);
+      start = top;
+      end = top + content.offsetHeight;
+    }
+
+    const requestedY = start + (end - start) * targetProgress - innerHeight * markerLine;
+    const beforeY = scrollY;
+    const previousBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
+    scrollTo({ top: requestedY, behavior: "auto" });
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     dispatchEvent(new Event("quantum-hub:scroll-frame"));
+    await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    document.documentElement.style.scrollBehavior = previousBehavior;
+    const actualY = scrollY;
+    return {
+      sticky,
+      beforeY,
+      requestedY,
+      actualY,
+      delta: actualY - requestedY,
+      actualMarkerY: actualY + innerHeight * markerLine,
+      start,
+      end,
+      targetProgress,
+    };
   });
-  await expect.poll(() => page.evaluate(() => (window as Window & { __phase3Events?: { event?: string }[] }).__phase3Events?.some(({ event }) => event === "story_stage_reached"))).toBe(true);
+  expect(stageTarget.actualY).toBeGreaterThan(stageTarget.beforeY);
+  expect(stageTarget.actualMarkerY).toBeGreaterThan(stageTarget.start);
+  expect(stageTarget.actualMarkerY).toBeLessThan(stageTarget.end);
+  await expect.poll(() => page.locator("#signal-story").getAttribute("data-active-stage")).toBe("test");
+  await expect.poll(() => page.evaluate(() => (
+    (window as Window & { __phase3Events?: { event?: string; stage?: string; route?: string }[] }).__phase3Events
+      ?.some(({ event, stage, route }) => event === "story_stage_reached" && stage === "test" && route === "/")
+  ))).toBe(true);
+  const reachedStage = await page.locator("#signal-story").evaluate((element) => ({
+    activeStage: (element as HTMLElement).dataset.activeStage,
+    provingState: (element as HTMLElement).dataset.provingState,
+    progress: Number(getComputedStyle(element).getPropertyValue("--stage-p")),
+  }));
+  expect(reachedStage.progress).toBeGreaterThanOrEqual(.45);
+  expect(reachedStage.progress).toBeLessThanOrEqual(.68);
   const cta = page.locator('.closing-conversion a[href="/for-partners"]');
   await cta.evaluate((element) => element.addEventListener("click", (event) => event.preventDefault(), { once: true }));
   await cta.click();
   const events = await page.evaluate(() => (window as Window & { __phase3Events?: Record<string, unknown>[] }).__phase3Events ?? []);
-  expect(events.some(({ event }) => event === "audience_select")).toBe(true);
-  expect(events.some(({ event }) => event === "story_stage_reached")).toBe(true);
-  expect(events.some(({ event }) => event === "cta_click")).toBe(true);
-  for (const payload of events) expect(Object.keys(payload).every((key) => ["event", "audience", "stage", "route", "placement", "cta"].includes(key))).toBe(true);
+  const audienceEvents = events.filter(({ event }) => event === "audience_select");
+  const storyEvents = events.filter(({ event }) => event === "story_stage_reached");
+  const ctaEvents = events.filter(({ event }) => event === "cta_click");
+  expect(audienceEvents).toEqual([audienceEvent]);
+  expect(storyEvents.length).toBeGreaterThanOrEqual(1);
+  expect(storyEvents.length).toBeLessThanOrEqual(5);
+  expect(storyEvents.filter(({ stage }) => stage === "test")).toHaveLength(1);
+  expect(new Set(storyEvents.map(({ stage }) => stage)).size).toBe(storyEvents.length);
+  expect(ctaEvents).toEqual([{
+    event: "cta_click",
+    audience: "partner",
+    cta: "partner",
+    route: "/",
+    placement: "final_conversion",
+  }]);
+  const allowedStages = new Set(["frame", "configure", "test", "resolve", "decide"]);
+  for (const payload of events) {
+    if (payload.event === "audience_select") {
+      expect(Object.keys(payload).sort()).toEqual(["audience", "event", "placement", "route"]);
+      expect(["partner", "startup"]).toContain(payload.audience);
+      expect(payload.route).toBe("/");
+      expect(payload.placement).toBe("audience_selector");
+    } else if (payload.event === "story_stage_reached") {
+      expect(Object.keys(payload).sort()).toEqual(["event", "route", "stage"]);
+      expect(allowedStages.has(String(payload.stage))).toBe(true);
+      expect(payload.route).toBe("/");
+    } else if (payload.event === "cta_click") {
+      expect(Object.keys(payload).sort()).toEqual(["audience", "cta", "event", "placement", "route"]);
+      expect(["neutral", "partner", "startup"]).toContain(payload.audience);
+      expect(["partner", "startup"]).toContain(payload.cta);
+      expect(payload.route).toBe("/");
+      expect(payload.placement).toBe("final_conversion");
+    } else {
+      throw new Error(`Unexpected analytics event: ${String(payload.event)}`);
+    }
+  }
+  console.log("PHASE3_ANALYTICS", JSON.stringify({
+    project: testInfo.project.name,
+    repeatEachIndex: testInfo.repeatEachIndex,
+    stageTarget,
+    reachedStage,
+    events,
+  }));
 });
 
 test("reduced motion resolves the path and presents every stage without sticky budget", async ({ page }) => {

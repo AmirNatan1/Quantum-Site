@@ -248,6 +248,79 @@ export const homeNarrativeCopy = {
   },
 } as const;
 
+export const consequenceLayerCopy = {
+  focus: {
+    mode: "01 / Orient",
+    eyebrow: "operating territories",
+    title: "Four areas, and the space between them",
+    body: "Our partners operate across automotive and mobility, logistics, energy, and Industry 4.0. The work often sits in the overlap between them.",
+    action: "Explore this focus area",
+  },
+  evidence: {
+    mode: "02 / Verify",
+    eyebrow: homeNarrativeCopy.evidence.eyebrow,
+    title: homeNarrativeCopy.evidence.title,
+    body: homeNarrativeCopy.evidence.body,
+    publicationNote: "Each case is reviewed with the startup and the partner before we publish it. The method behind the work is shown here without case results.",
+    registers: [
+      ["Observation", "What was observed under the stated test condition."],
+      ["Limitation", "What the test did not establish remains part of the record."],
+      ["Edge case", "Where a result changes, breaks or needs another condition."],
+      ["Failure", "A hypothesis the evidence does not support."],
+      ["Resolution", "What is known clearly enough to support a decision."],
+    ],
+    decisions: [
+      ["Scale", "Evidence supports taking it further."],
+      ["Iterate", "Evidence is insufficient; the question or test scope changes."],
+      ["Stop", "Evidence does not support proceeding."],
+    ],
+  },
+  spark: {
+    mode: "03 / Activate",
+    eyebrow: "ecosystem activation",
+    title: "SPARK: a POC runway with a partner who wants the answer",
+    body: "SPARK is a thirteen-week programme for MVP+ startups. It is equity-free and there is no participation fee. Application dates are not currently published.",
+    relationships: [
+      ["Industry", "Operational need"],
+      ["Startup", "Working product"],
+      ["POC scope", "Question, test and criteria"],
+      ["Decision", "Take it further, test again or stop"],
+    ],
+    action: "How SPARK works",
+    capabilityLabel: "Test capability",
+    capabilityTitle: "Workshop + working environments",
+    capabilityBody: "Integration, instrumentation and testing happen in the environment where the technology has to perform.",
+    capabilityAction: "What we can test",
+  },
+  conversion: {
+    mode: "04 / Choose",
+    eyebrow: "choose your entry point",
+    paths: [
+      {
+        id: "startup",
+        label: "For startups",
+        title: homeNarrativeCopy.conversion.startupAction,
+        body: "A working product that needs to prove itself in a real industrial environment.",
+        href: "/for-startups",
+      },
+      {
+        id: "partner",
+        label: "For industry",
+        title: homeNarrativeCopy.conversion.partnerAction,
+        body: "An operational problem that needs to become a testable question.",
+        href: "/for-partners",
+      },
+      {
+        id: "contact",
+        label: "Contact",
+        title: "Ask a question",
+        body: "Bring an operational need, tell us about technology you have built, or ask a question.",
+        href: "/contact",
+      },
+    ],
+  },
+} as const;
+
 export const homeSignalAnchors = [
   { id: "hero-origin", order: 1, lane: "end" },
   { id: "consortium-network", order: 2, lane: "center" },
@@ -274,8 +347,8 @@ export const homeSceneContract = [
   { id: "operating-model", order: 4, mode: "full", entryAnchor: "workshop-alignment", exitAnchor: "workshop-alignment", depthPx: 8 },
   { id: "quantum-route", order: 5, mode: "full", entryAnchor: "frame", exitAnchor: "decide", internalAnchors: ["frame", "configure", "test", "resolve", "decide"], depthPx: 12 },
   { id: "representative-challenges", order: 6, mode: "full", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 10 },
-  { id: "focus-areas", order: 7, mode: "static", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 0 },
-  { id: "evidence-resolution", order: 8, mode: "static", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 0 },
+  { id: "focus-areas", order: 7, mode: "full", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 8 },
+  { id: "evidence-resolution", order: 8, mode: "full", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 8 },
   { id: "spark-test-transition", order: 9, mode: "light", entryAnchor: "spark-next-step", exitAnchor: "test-capability", internalAnchors: ["spark-next-step", "test-capability"], depthPx: 8 },
   { id: "final-conversion", order: 10, mode: "light", entryAnchor: "final-conversion", exitAnchor: "final-conversion", depthPx: 4 },
 ] as const satisfies readonly HomeSceneContract[];

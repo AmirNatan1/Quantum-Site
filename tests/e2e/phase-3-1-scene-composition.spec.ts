@@ -254,8 +254,8 @@ test("chapter contract exposes full, light, and static scenes in semantic order"
     { id: "operating-model", mode: "full" },
     { id: "quantum-route", mode: "full" },
     { id: "representative-challenges", mode: "full" },
-    { id: "focus-areas", mode: "static" },
-    { id: "evidence-resolution", mode: "static" },
+    { id: "focus-areas", mode: "full" },
+    { id: "evidence-resolution", mode: "full" },
     { id: "spark-test-transition", mode: "light" },
     { id: "final-conversion", mode: "light" },
   ]);
@@ -613,6 +613,6 @@ test.describe("Phase 3.1 without JavaScript", () => {
     expect(unresolved).toBe(0);
     await expect(page.locator("[data-signal-stage]")).toHaveCount(5);
     await expect(page.locator("[data-decision-path]")).toHaveText(["Scale", "Iterate", "Stop"]);
-    await expect(page.locator('.closing-conversion a')).toHaveCount(2);
+    await expect(page.locator('.closing-conversion a')).toHaveCount(3);
   });
 });
