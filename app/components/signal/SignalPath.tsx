@@ -13,16 +13,18 @@ export function SignalPath({ geometry }: { geometry: SignalGeometry }) {
             focusable="false"
           >
             <path className="quantum-signal-track" d={geometry.path} />
-            <path className="quantum-signal-progress" pathLength="1" d={geometry.path} />
+            <path className="quantum-signal-carrier" pathLength="1" d={geometry.path} />
+            <path className="quantum-signal-head" pathLength="1" d={geometry.path} />
             {geometry.points.map((point) => (
-              <circle
+              <line
                 key={point.id}
-                className="quantum-signal-node"
-                data-signal-node={point.id}
+                className="quantum-signal-anchor-mark"
+                data-signal-mark={point.id}
                 data-path-progress={point.progress.toFixed(4)}
-                cx={point.x}
-                cy={point.y}
-                r="5"
+                x1={point.x - 4}
+                x2={point.x + 4}
+                y1={point.y}
+                y2={point.y}
               />
             ))}
           </svg>

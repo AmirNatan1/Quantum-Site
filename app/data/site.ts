@@ -3,6 +3,7 @@ import type {
   HomeSceneContract,
   Partner,
   ProcessStage,
+  ProvingStage,
   Sector,
   TeamMember,
 } from "./model.ts";
@@ -145,6 +146,56 @@ export const processStages = [
   },
 ] as const satisfies readonly ProcessStage[];
 
+export const provingStages = [
+  {
+    id: "frame",
+    order: 1,
+    title: "Frame",
+    purpose: "Turn the operational need into a proposition that can be tested.",
+    consequence: "The unresolved specimen leaves with a defined boundary and a written proof condition.",
+    concepts: ["Operational need", "Environment", "Constraint", "Proof condition", "Test brief"],
+  },
+  {
+    id: "configure",
+    order: 2,
+    title: "Configure",
+    purpose: "Construct the conditions under which the proposition can meet reality.",
+    consequence: "The environment, field condition and instrumentation assemble around the same specimen.",
+    concepts: ["Environment", "Constraint", "Technology", "Field condition", "Instrumentation"],
+  },
+  {
+    id: "test",
+    order: 3,
+    title: "Test",
+    purpose: "Expose the technology to relevant conditions and collect observations.",
+    consequence: "The specimen carries every evidence mark forward, including limitations and resistance.",
+    concepts: ["Field test", "Conditions", "Observation", "Evidence", "Limitations"],
+  },
+  {
+    id: "resolve",
+    order: 4,
+    title: "Resolve",
+    purpose: "Turn observations into decision-grade understanding.",
+    consequence: "Conflicting tracks reconcile or terminate. Resolution is earned before the route continues.",
+    concepts: ["Evidence", "Edge case", "Limitation", "Failure", "Resolution"],
+  },
+  {
+    id: "decide",
+    order: 5,
+    title: "Decide",
+    purpose: "Convert evidence into an explicit next action.",
+    consequence: "Scale, iterate and stop remain legitimate paths. The apparatus releases an evidence object, not a predetermined answer.",
+    concepts: ["Evidence packet", "Decision gate", "Scale", "Iterate", "Stop"],
+  },
+] as const satisfies readonly ProvingStage[];
+
+export const provingRouteCopy = {
+  eyebrow: "the proving route",
+  title: "Uncertainty enters. A decision leaves.",
+  body: "One proof specimen moves through a continuous industrial route. Each operation leaves a consequence that the next stage has to carry.",
+  release: "The purpose of a POC is not activity. It is a better decision.",
+} as const;
+
 export const homeNarrativeCopy = {
   consortium: {
     eyebrow: "the consortium",
@@ -197,17 +248,90 @@ export const homeNarrativeCopy = {
   },
 } as const;
 
+export const consequenceLayerCopy = {
+  focus: {
+    mode: "01 / Orient",
+    eyebrow: "operating territories",
+    title: "Four areas, and the space between them",
+    body: "Our partners operate across automotive and mobility, logistics, energy, and Industry 4.0. The work often sits in the overlap between them.",
+    action: "Explore this focus area",
+  },
+  evidence: {
+    mode: "02 / Verify",
+    eyebrow: homeNarrativeCopy.evidence.eyebrow,
+    title: homeNarrativeCopy.evidence.title,
+    body: homeNarrativeCopy.evidence.body,
+    publicationNote: "Each case is reviewed with the startup and the partner before we publish it. The method behind the work is shown here without case results.",
+    registers: [
+      ["Observation", "What was observed under the stated test condition."],
+      ["Limitation", "What the test did not establish remains part of the record."],
+      ["Edge case", "Where a result changes, breaks or needs another condition."],
+      ["Failure", "A hypothesis the evidence does not support."],
+      ["Resolution", "What is known clearly enough to support a decision."],
+    ],
+    decisions: [
+      ["Scale", "Evidence supports taking it further."],
+      ["Iterate", "Evidence is insufficient; the question or test scope changes."],
+      ["Stop", "Evidence does not support proceeding."],
+    ],
+  },
+  spark: {
+    mode: "03 / Activate",
+    eyebrow: "ecosystem activation",
+    title: "SPARK: a POC runway with a partner who wants the answer",
+    body: "SPARK is a thirteen-week programme for MVP+ startups. It is equity-free and there is no participation fee. Application dates are not currently published.",
+    relationships: [
+      ["Industry", "Operational need"],
+      ["Startup", "Working product"],
+      ["POC scope", "Question, test and criteria"],
+      ["Decision", "Take it further, test again or stop"],
+    ],
+    action: "How SPARK works",
+    capabilityLabel: "Test capability",
+    capabilityTitle: "Workshop + working environments",
+    capabilityBody: "Integration, instrumentation and testing happen in the environment where the technology has to perform.",
+    capabilityAction: "What we can test",
+  },
+  conversion: {
+    mode: "04 / Choose",
+    eyebrow: "choose your entry point",
+    paths: [
+      {
+        id: "startup",
+        label: "For startups",
+        title: homeNarrativeCopy.conversion.startupAction,
+        body: "A working product that needs to prove itself in a real industrial environment.",
+        href: "/for-startups",
+      },
+      {
+        id: "partner",
+        label: "For industry",
+        title: homeNarrativeCopy.conversion.partnerAction,
+        body: "An operational problem that needs to become a testable question.",
+        href: "/for-partners",
+      },
+      {
+        id: "contact",
+        label: "Contact",
+        title: "Ask a question",
+        body: "Bring an operational need, tell us about technology you have built, or ask a question.",
+        href: "/contact",
+      },
+    ],
+  },
+} as const;
+
 export const homeSignalAnchors = [
   { id: "hero-origin", order: 1, lane: "end" },
   { id: "consortium-network", order: 2, lane: "center" },
   { id: "evidence-criteria", order: 3, lane: "start" },
   { id: "audience-choice", order: 4, lane: "end" },
   { id: "workshop-alignment", order: 5, lane: "center" },
-  { id: "operational-need", order: 6, lane: "start" },
-  { id: "global-scouting", order: 7, lane: "end" },
-  { id: "partner-match", order: 8, lane: "center" },
-  { id: "field-poc", order: 9, lane: "start" },
-  { id: "scale-what-works", order: 10, lane: "end" },
+  { id: "frame", order: 6, lane: "center" },
+  { id: "configure", order: 7, lane: "center" },
+  { id: "test", order: 8, lane: "center" },
+  { id: "resolve", order: 9, lane: "center" },
+  { id: "decide", order: 10, lane: "center" },
   { id: "representative-challenges", order: 11, lane: "start" },
   { id: "focus-areas", order: 12, lane: "end" },
   { id: "evidence-publication", order: 13, lane: "center" },
@@ -221,10 +345,10 @@ export const homeSceneContract = [
   { id: "consortium", order: 2, mode: "full", entryAnchor: "consortium-network", exitAnchor: "evidence-criteria", internalAnchors: ["consortium-network", "evidence-criteria"], depthPx: 8 },
   { id: "audience", order: 3, mode: "light", entryAnchor: "audience-choice", exitAnchor: "audience-choice", depthPx: 6 },
   { id: "operating-model", order: 4, mode: "full", entryAnchor: "workshop-alignment", exitAnchor: "workshop-alignment", depthPx: 8 },
-  { id: "quantum-route", order: 5, mode: "full", entryAnchor: "operational-need", exitAnchor: "scale-what-works", internalAnchors: ["operational-need", "global-scouting", "partner-match", "field-poc", "scale-what-works"], depthPx: 12 },
-  { id: "representative-challenges", order: 6, mode: "static", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 0 },
-  { id: "focus-areas", order: 7, mode: "static", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 0 },
-  { id: "evidence-resolution", order: 8, mode: "static", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 0 },
+  { id: "quantum-route", order: 5, mode: "full", entryAnchor: "frame", exitAnchor: "decide", internalAnchors: ["frame", "configure", "test", "resolve", "decide"], depthPx: 12 },
+  { id: "representative-challenges", order: 6, mode: "full", entryAnchor: "representative-challenges", exitAnchor: "representative-challenges", depthPx: 10 },
+  { id: "focus-areas", order: 7, mode: "full", entryAnchor: "focus-areas", exitAnchor: "focus-areas", depthPx: 8 },
+  { id: "evidence-resolution", order: 8, mode: "full", entryAnchor: "evidence-publication", exitAnchor: "evidence-publication", depthPx: 8 },
   { id: "spark-test-transition", order: 9, mode: "light", entryAnchor: "spark-next-step", exitAnchor: "test-capability", internalAnchors: ["spark-next-step", "test-capability"], depthPx: 8 },
   { id: "final-conversion", order: 10, mode: "light", entryAnchor: "final-conversion", exitAnchor: "final-conversion", depthPx: 4 },
 ] as const satisfies readonly HomeSceneContract[];

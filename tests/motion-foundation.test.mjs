@@ -68,13 +68,14 @@ test("active typography and shared transition values resolve through tokens", as
 });
 
 test("reveal styling and runtime fail open", async () => {
-  const [styles, hook, headings, site, consortium, alignment, process, closing] = await Promise.all([
+  const [styles, hook, headings, site, hero, framing, convergence, process, closing] = await Promise.all([
     read("../app/globals.css"),
     read("../app/hooks/useRevealFoundation.ts"),
     read("../app/components/brand/AccentHeadingText.tsx"),
     read("../app/SiteExperience.tsx"),
-    read("../app/components/home/ConsortiumChapter.tsx"),
-    read("../app/components/home/AlignmentScene.tsx"),
+    read("../app/components/home/InspectionFieldHero.tsx"),
+    read("../app/components/home/ProblemFramingChamber.tsx"),
+    read("../app/components/home/ConvergenceChamber.tsx"),
     read("../app/components/home/ProcessStory.tsx"),
     read("../app/components/home/ClosingConversion.tsx"),
   ]);
@@ -96,13 +97,14 @@ test("reveal styling and runtime fail open", async () => {
   assert.match(headings, /accentI = false/);
   assert.match(headings, /accentI && part === "i"/);
   assert.doesNotMatch(headings, /text\s*===/);
-  assert.match(site, /text="Prove it where" accentI/);
-  assert.match(site, /text="it has to work" accentI/);
-  assert.match(alignment, /reveal accentI/);
+  assert.match(hero, /aria-label="Prove it where it has to work\."/);
+  assert.match(hero, /<span>Prove it<\/span>/);
+  assert.match(hero, /<span>where it has<\/span>/);
+  assert.match(hero, /<span>to work<\/span>/);
+  assert.match(convergence, /reveal accentI/);
   assert.match(process, /reveal accentI/);
-  assert.doesNotMatch(`${consortium}\n${closing}`, /accentI/);
-  assert.match(`${site}\n${consortium}`, /"--reveal-index": index/);
-  assert.doesNotMatch(`${site}\n${consortium}`, /index\s*\*\s*70/);
+  assert.doesNotMatch(`${framing}\n${closing}`, /accentI/);
+  assert.doesNotMatch(`${site}\n${framing}`, /index\s*\*\s*70/);
 });
 
 test("dormant blocked components remain outside the active site entry", async () => {

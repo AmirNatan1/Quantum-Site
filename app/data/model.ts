@@ -69,11 +69,11 @@ export type HomeSignalAnchorId =
   | "evidence-criteria"
   | "audience-choice"
   | "workshop-alignment"
-  | "operational-need"
-  | "global-scouting"
-  | "partner-match"
-  | "field-poc"
-  | "scale-what-works"
+  | "frame"
+  | "configure"
+  | "test"
+  | "resolve"
+  | "decide"
   | "representative-challenges"
   | "focus-areas"
   | "evidence-publication"
@@ -129,6 +129,17 @@ export type ProcessStage = {
   diagramLabels: readonly string[];
   resolutionLabels?: readonly [string, string, string];
   cta?: Cta;
+};
+
+export type ProvingStageId = "frame" | "configure" | "test" | "resolve" | "decide";
+
+export type ProvingStage = {
+  id: ProvingStageId;
+  order: number;
+  title: "Frame" | "Configure" | "Test" | "Resolve" | "Decide";
+  purpose: string;
+  consequence: string;
+  concepts: readonly string[];
 };
 
 export type Need = {

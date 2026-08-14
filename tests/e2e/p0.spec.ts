@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = ["/", "/about", "/for-partners", "/for-startups", "/spark", "/industries", "/pocs", "/case-studies", "/contact"];
 const statusRoutes = ["/updates", "/spark-register"];
+const provingStages = ["frame", "configure", "test", "resolve", "decide"];
+const enhancedD2Query = "(min-width: 1101px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)";
 
 test("all retained routes render their primary content", async ({ page }) => {
   for (const route of [...publicRoutes, ...statusRoutes]) {
@@ -25,9 +27,9 @@ test("homepage exposes publication-safe content and the progressive story", asyn
   await expect(page.locator("video, img[src*='hero-quantum-hub'], img[src*='og-signal']")).toHaveCount(0);
   await expect(page.locator("#signal-story [data-signal-stage]")).toHaveCount(5);
   await expect(page.getByRole("radio", { name: /I have a technology/i })).toBeVisible();
-  await expect(page.locator(".need-card")).toHaveCount(9);
-  await expect(page.locator(".need-card").first()).toContainText("Representative");
-  await expect(page.getByRole("heading", { name: /case library is being prepared for publication/i })).toBeVisible();
+  await expect(page.locator("[data-problem-record]")).toHaveCount(9);
+  await expect(page.getByText("Representative — not an open call", { exact: true })).toBeAttached();
+  await expect(page.getByRole("heading", { name: "A written answer, against criteria agreed in advance" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
@@ -54,40 +56,91 @@ test("skip link, playground tabs and controls are keyboard operable", async ({ p
   await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
 });
 
-test("industry tabs expose roving keyboard state and a labelled panel", async ({ page }) => {
+test("focus areas expose four native, keyboard-reachable destination links", async ({ page, browserName }) => {
   await page.goto("/");
-  const tablist = page.getByRole("tablist", { name: "Industries" });
-  const tabs = tablist.getByRole("tab");
-  await tabs.first().focus();
-  await page.keyboard.press("End");
-  await expect(tabs.last()).toBeFocused();
-  await expect(tabs.last()).toHaveAttribute("aria-selected", "true");
-  const panelId = await tabs.last().getAttribute("aria-controls");
-  expect(panelId).toBeTruthy();
-  await expect(page.locator(`#${panelId}`)).toHaveAttribute("aria-labelledby", await tabs.last().getAttribute("id") ?? "");
+  const links = page.locator('[data-scene-id="focus-areas"] [data-territory] > a');
+  await expect(links).toHaveCount(4);
+  await expect(links.nth(0)).toHaveAttribute("href", "/industries#automotive");
+  await expect(links.nth(1)).toHaveAttribute("href", "/industries#logistics");
+  await expect(links.nth(2)).toHaveAttribute("href", "/industries#energy");
+  await expect(links.nth(3)).toHaveAttribute("href", "/industries#industry40");
+  await links.first().focus();
+  await expect(links.first()).toBeFocused();
+  if (browserName === "webkit") await links.nth(1).focus();
+  else await page.keyboard.press("Tab");
+  await expect(links.nth(1)).toBeFocused();
 });
 
 test("Phase 1 layouts hold at audited widths", async ({ page }) => {
-  const widths = [360, 390, 501, 768, 890, 1024, 1100, 1440];
-  for (const width of widths) {
-    await page.setViewportSize({ width, height: 900 });
+  const viewports = [
+    { width: 360, height: 800, enhancedEligible: false },
+    { width: 390, height: 844, enhancedEligible: false },
+    { width: 501, height: 900, enhancedEligible: false },
+    { width: 768, height: 900, enhancedEligible: false },
+    { width: 890, height: 900, enhancedEligible: false },
+    { width: 1024, height: 900, enhancedEligible: false },
+    { width: 1100, height: 700, enhancedEligible: false },
+    { width: 1101, height: 700, enhancedEligible: true },
+    { width: 1440, height: 900, enhancedEligible: true },
+  ];
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
     await page.goto("/");
-    const measurements = await page.evaluate(() => {
+    await expect(page.locator("html"), `${viewport.width}px global JavaScript readiness`).toHaveClass(/\bjs-ready\b/);
+    const measurements = await page.evaluate(({ query }) => {
       const heading = document.querySelector<HTMLElement>("h1");
-      const story = document.querySelector<HTMLElement>(".signal-story-layout");
-      if (!heading || !story) throw new Error("Expected Phase 1 landmarks are missing");
+      const story = document.querySelector<HTMLElement>('#signal-story.proving-route[data-scene-id="quantum-route"]');
+      const routeLayout = story?.querySelector<HTMLElement>(".proving-route__layout");
+      const station = story?.querySelector<HTMLElement>(".proving-route__station");
+      if (!heading || !story || !routeLayout || !station) throw new Error("Expected Phase 1 landmarks are missing");
       const headingStyle = getComputedStyle(heading);
       const lineHeight = Number.parseFloat(headingStyle.lineHeight);
       return {
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         headingLines: heading.getBoundingClientRect().height / lineHeight,
-        storyColumns: getComputedStyle(story).gridTemplateColumns.split(" ").filter(Boolean).length,
+        storyColumns: getComputedStyle(routeLayout).gridTemplateColumns.split(" ").filter(Boolean).length,
+        routeCount: document.querySelectorAll('#signal-story.proving-route[data-scene-id="quantum-route"]').length,
+        stageOrder: Array.from(story.querySelectorAll("[data-proving-stage-content]"), (element) => element.getAttribute("data-proving-stage-content")),
+        apparatusCount: story.querySelectorAll("[data-proving-apparatus]").length,
+        specimenCount: story.querySelectorAll("[data-proving-specimen]").length,
+        enhancedEligible: window.matchMedia(query).matches,
+        stationPosition: getComputedStyle(station).position,
       };
-    });
-    expect(measurements.overflow, `${width}px horizontal overflow`).toBeLessThanOrEqual(1);
-    expect(measurements.headingLines, `${width}px headline lines`).toBeLessThanOrEqual(width >= 501 ? 3.2 : 4.2);
-    if (width >= 861 && width <= 1100) expect(measurements.storyColumns, `${width}px intermediate story columns`).toBe(1);
+    }, { query: enhancedD2Query });
+    expect(measurements.overflow, `${viewport.width}px horizontal overflow`).toBeLessThanOrEqual(1);
+    expect(measurements.headingLines, `${viewport.width}px headline lines`).toBeLessThanOrEqual(viewport.width >= 501 ? 3.2 : 4.2);
+    expect(measurements.routeCount, `${viewport.width}px D2 route`).toBe(1);
+    expect(measurements.stageOrder, `${viewport.width}px D2 stage order`).toEqual(provingStages);
+    expect(measurements.apparatusCount, `${viewport.width}px D2 apparatus`).toBe(1);
+    expect(measurements.specimenCount, `${viewport.width}px D2 specimen`).toBe(1);
+    expect(measurements.enhancedEligible, `${viewport.width}x${viewport.height} enhancement eligibility`).toBe(viewport.enhancedEligible);
+    expect(measurements.stationPosition, `${viewport.width}x${viewport.height} route mode`).toBe(viewport.enhancedEligible ? "sticky" : "relative");
+    if (viewport.width >= 861 && viewport.width <= 1100) expect(measurements.storyColumns, `${viewport.width}px intermediate route columns`).toBe(2);
   }
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1101, height: 700 });
+  await page.goto("/");
+  await expect(page.locator("html"), "reduced-motion global JavaScript readiness").toHaveClass(/\bjs-ready\b/);
+  const reducedMotion = await page.evaluate(({ query }) => {
+    const route = document.querySelector<HTMLElement>('#signal-story.proving-route[data-scene-id="quantum-route"]');
+    const station = route?.querySelector<HTMLElement>(".proving-route__station");
+    if (!route || !station) throw new Error("Expected reduced-motion D2 route");
+    return {
+      enhancedEligible: window.matchMedia(query).matches,
+      stationPosition: getComputedStyle(station).position,
+      stageOrder: Array.from(route.querySelectorAll("[data-proving-stage-content]"), (element) => element.getAttribute("data-proving-stage-content")),
+      apparatusCount: route.querySelectorAll("[data-proving-apparatus]").length,
+      specimenCount: route.querySelectorAll("[data-proving-specimen]").length,
+    };
+  }, { query: enhancedD2Query });
+  expect(reducedMotion.enhancedEligible).toBe(false);
+  expect(reducedMotion.stationPosition).toBe("relative");
+  expect(reducedMotion.stageOrder).toEqual(provingStages);
+  expect(reducedMotion.apparatusCount).toBe(1);
+  expect(reducedMotion.specimenCount).toBe(1);
 });
 
 test("primary controls meet the 44px target floor", async ({ page }) => {
@@ -107,7 +160,7 @@ test("primary controls meet the 44px target floor", async ({ page }) => {
 test("publication-safe text pairs retain WCAG AA contrast", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  const ratios = await page.locator(".partner-strip-label, .qualitative-grid p, .signal-stage-copy p, .footer-bottom").evaluateAll((elements) => {
+  const ratios = await page.locator(".partner-strip-label, .qualitative-grid p, .proving-route__copy p, .footer-bottom").evaluateAll((elements) => {
     const parse = (value: string) => {
       const parts = value.match(/[\d.]+/g)?.map(Number) ?? [];
       return { r: parts[0] ?? 0, g: parts[1] ?? 0, b: parts[2] ?? 0, a: parts[3] ?? 1 };
@@ -148,8 +201,12 @@ test("reduced motion keeps decorative motion optional", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator("video")).toHaveCount(0);
-  const animation = await page.locator(".hero-safe-visual > span").first().evaluate((element) => getComputedStyle(element).animationName);
-  expect(animation).toBe("none");
+  const inspection = await page.locator(".inspection-field__substrate").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { animation: style.animationName, mask: style.maskImage };
+  });
+  expect(inspection.animation).toBe("none");
+  expect(inspection.mask).toBe("none");
 });
 
 test("forms fail closed and expose no submission controls", async ({ page }) => {
@@ -192,8 +249,8 @@ test.describe("without JavaScript", () => {
   test("essential homepage meaning and routes remain available", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "Prove it where it has to work" })).toBeVisible();
-    await expect(page.locator(".signal-stage").filter({ hasText: "The partner states the operational problem" }).first()).toBeVisible();
+    await expect(page.locator('[data-proving-stage-content="frame"]')).toBeVisible();
     await expect(page.getByRole("link", { name: "Bring an operational need" }).first()).toBeVisible();
-    await expect(page.locator(".need-card")).toHaveCount(9);
+    await expect(page.locator("[data-problem-record]")).toHaveCount(9);
   });
 });

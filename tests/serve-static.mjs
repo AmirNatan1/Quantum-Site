@@ -1,9 +1,15 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
+import {
+  headersForPagesRequest,
+  loadPagesStaticArtifacts,
+  resolvePagesProxy,
+} from "./pages-static-artifacts.mjs";
 
 const root = new URL("../dist/client/", import.meta.url);
 const directory = decodeURIComponent(root.pathname.slice(1));
+const { redirects, headerRules } = loadPagesStaticArtifacts(directory);
 const types = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -12,7 +18,6 @@ const types = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
-  ".rsc": "text/x-component; charset=utf-8",
   ".svg": "image/svg+xml; charset=utf-8",
   ".webp": "image/webp",
   ".woff2": "font/woff2",
@@ -20,7 +25,8 @@ const types = {
 
 const server = createServer((request, response) => {
   const pathname = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
-  const route = pathname === "/" ? "index.html" : pathname.endsWith("/") ? `${pathname.slice(1)}.html` : pathname.slice(1);
+  const resolvedPathname = resolvePagesProxy(pathname, redirects);
+  const route = resolvedPathname === "/" ? "index.html" : resolvedPathname.endsWith("/") ? `${resolvedPathname.slice(1)}.html` : resolvedPathname.slice(1);
   const candidates = [route, `${route}.html`, join(route, "index.html")];
   const relative = candidates.find((candidate) => {
     const file = normalize(join(directory, candidate));
@@ -32,8 +38,9 @@ const server = createServer((request, response) => {
     return;
   }
   const file = normalize(join(directory, relative));
+  const artifactHeaders = headersForPagesRequest([pathname, resolvedPathname], headerRules);
   response.writeHead(200, {
-    "content-type": types[extname(file)] ?? "application/octet-stream",
+    "content-type": artifactHeaders.get("content-type") ?? types[extname(file)] ?? "application/octet-stream",
     "cache-control": relative.startsWith("assets") ? "public, max-age=31536000, immutable" : "no-cache",
   });
   createReadStream(file).pipe(response);

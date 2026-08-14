@@ -4,3 +4,4 @@ export * from "./needs.ts";
 export * from "./case-studies.ts";
 export * from "./spark.ts";
 export * from "./updates.ts";
+export * from "./supporting-routes.ts";

@@ -23,7 +23,7 @@ test("closed submission presentation has no form behavior", async () => {
 });
 
 test("POC universal resolutions remain structurally separate from representative challenges", async () => {
-  const source = await readFile(new URL("../app/SiteExperience.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/routes/SupportingRoutes.tsx", import.meta.url), "utf8");
   const standard = source.indexOf('className="poc-standard"');
   const catalogue = source.indexOf("<NeedsBoard />", standard);
   assert.ok(standard >= 0);
@@ -38,7 +38,8 @@ test("analytics is event-discriminated and the Phase 5 payload is bounded", asyn
     readFile(new URL("../app/lib/analytics-events.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/needs/NeedsBoard.tsx", import.meta.url), "utf8"),
   ]);
-  for (const active of ["audience_select", "cta_click", "story_stage_reached", "instrument_start", "instrument_selection_change", "instrument_result_view", "instrument_reset", "need_filter"]) assert.match(analytics, new RegExp(`"${active}"`));
+  for (const active of ["audience_select", "cta_click", "story_stage_reached", "need_filter"]) assert.match(analytics, new RegExp(`"${active}"`));
+  for (const removed of ["instrument_start", "instrument_selection_change", "instrument_result_view", "instrument_reset"]) assert.doesNotMatch(analytics, new RegExp(`"${removed}"`));
   for (const removed of ["match_complete", "case_open", "spark_apply_start", "form_submit_result"]) assert.doesNotMatch(analytics, new RegExp(removed));
   assert.match(analytics, /event: "need_filter"; route: "\/pocs"; placement: "pocs_catalogue"; sector: Sector/);
   assert.doesNotMatch(analytics, /label\?|result\?|route\?: string/);

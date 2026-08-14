@@ -13,7 +13,7 @@ test("the approved brand assets remain within their budgets", async () => {
   assert.ok(logo.size <= 10_000, `logo is ${logo.size} bytes`);
   assert.ok(favicon.size <= 150_000, `favicon is ${favicon.size} bytes`);
   const source = await readFile(new URL("../app/SiteExperience.tsx", import.meta.url), "utf8");
-  assert.match(source, /hero-safe-visual/);
+  assert.match(source, /InspectionFieldHero/);
   assert.doesNotMatch(source, /<video|HeroMedia|poster=/);
 });
 
@@ -45,7 +45,7 @@ test("the approved self-hosted fonts remain within their separate asset budget",
   assert.ok(sizes.reduce((total, size) => total + size, 0) <= 85_000, `font aggregate is ${sizes.reduce((total, size) => total + size, 0)} bytes`);
 });
 
-test("built client assets stay within initial gzip guardrails", async () => {
+test("built client assets stay within the approved D5 gzip guardrails", async () => {
   const directory = fileURLToPath(new URL("../dist/client/assets/", import.meta.url));
   const files = await readdir(directory);
   let javascript = 0;
@@ -57,14 +57,15 @@ test("built client assets stay within initial gzip guardrails", async () => {
     if (file.endsWith(".js")) javascript += compressed;
     else css += compressed;
   }
-  assert.ok(javascript <= 114_250, `client JavaScript is ${javascript} bytes gzip`);
-  assert.ok(css <= 15_433, `client CSS is ${css} bytes gzip`);
+  assert.ok(javascript <= 118_000, `client JavaScript is ${javascript} bytes gzip`);
+  assert.ok(css <= 26_000, `client CSS is ${css} bytes gzip`);
 });
 
 test("production styles do not introduce sub-11px type", async () => {
   const styles = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/signal.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/routes.css", import.meta.url), "utf8"),
   ]);
 
   for (const stylesheet of styles) {
